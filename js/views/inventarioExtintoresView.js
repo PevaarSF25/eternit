@@ -459,22 +459,22 @@ async function loadExtintorHistory(container, numeroSerie) {
         }
 
         const ELEMENTOS_CLAVES = [
-            { key: 'estado_acceso', label: 'Acceso' },
-            { key: 'estado_senalizacion', label: 'Señalización' },
-            { key: 'estado_pared_altura', label: 'Pared/Altura' },
-            { key: 'estado_piso_base', label: 'Piso (Base)' },
-            { key: 'estado_limpieza', label: 'Limpieza' },
-            { key: 'estado_rotulo', label: 'Rótulo' },
-            { key: 'estado_cilindro', label: 'Cilindro' },
-            { key: 'estado_manometro', label: 'Manómetro' },
-            { key: 'estado_boquilla', label: 'Boquilla' },
-            { key: 'estado_presion', label: 'Presión' },
-            { key: 'estado_pin_seguridad', label: 'Pin de seguridad' },
-            { key: 'estado_manguera', label: 'Manguera' },
-            { key: 'estado_corneta', label: 'Corneta' },
-            { key: 'estado_pintura', label: 'Pintura' },
-            { key: 'estado_manija_transporte', label: 'Manija de transporte' },
-            { key: 'estado_sello_garantia', label: 'Sello de garantía' }
+            { key: 'estado_acceso', label: 'Acceso', short: 'AC' },
+            { key: 'estado_senalizacion', label: 'Señalización', short: 'SE' },
+            { key: 'estado_pared_altura', label: 'Pared/Altura', short: 'PA' },
+            { key: 'estado_piso_base', label: 'Piso (Base)', short: 'PB' },
+            { key: 'estado_limpieza', label: 'Limpieza', short: 'LI' },
+            { key: 'estado_rotulo', label: 'Rótulo', short: 'RO' },
+            { key: 'estado_cilindro', label: 'Cilindro', short: 'CI' },
+            { key: 'estado_manometro', label: 'Manómetro', short: 'MA' },
+            { key: 'estado_boquilla', label: 'Boquilla', short: 'BO' },
+            { key: 'estado_presion', label: 'Presión', short: 'PR' },
+            { key: 'estado_pin_seguridad', label: 'Pin de seguridad', short: 'PS' },
+            { key: 'estado_manguera', label: 'Manguera', short: 'MG' },
+            { key: 'estado_corneta', label: 'Corneta', short: 'CO' },
+            { key: 'estado_pintura', label: 'Pintura', short: 'PT' },
+            { key: 'estado_manija_transporte', label: 'Manija de transporte', short: 'MT' },
+            { key: 'estado_sello_garantia', label: 'Sello de garantía', short: 'SG' }
         ];
 
         let html = `
@@ -509,10 +509,6 @@ async function loadExtintorHistory(container, numeroSerie) {
             const mCount = states.filter(v => v === 'Mal estado').length;
             const nCount = states.filter(v => v === 'No aplica').length;
 
-            const failedElements = ELEMENTOS_CLAVES
-                .filter(el => item[el.key] === 'Mal estado')
-                .map(el => el.label);
-
             const isOperativo = mCount === 0;
             const statusText = isOperativo ? 'Operativo' : 'Requiere Atención';
             const statusBg = isOperativo ? 'var(--success-bg)' : 'var(--danger-bg)';
@@ -523,12 +519,23 @@ async function loadExtintorHistory(container, numeroSerie) {
             if (mCount > 0) badgesHtml += `<span style="padding: 2px 6px; border-radius: 4px; background: #fee2e2; color: #b91c1c; font-weight: 600; font-size: 10px;">🔴 M: ${mCount}</span>`;
             if (nCount > 0) badgesHtml += `<span style="padding: 2px 6px; border-radius: 4px; background: #ffedd5; color: #c2410c; font-weight: 600; font-size: 10px;">🟠 N: ${nCount}</span>`;
 
-            const failedListHtml = failedElements.length > 0
-                ? `<div style="margin-top: 6px; font-size: 11px; color: var(--danger); font-weight: 500; display: flex; align-items: center; gap: 4px;">
-                     <i data-lucide="alert-triangle" style="width:13px; height:13px;"></i>
-                     <span>Fallas: <strong style="text-decoration: underline;">${failedElements.join(', ')}</strong></span>
-                   </div>`
-                : '';
+            // Construir resumen visual abreviado de todos los elementos
+            let elementosResumenHtml = '<div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">';
+            ELEMENTOS_CLAVES.forEach(el => {
+                const val = item[el.key] || '';
+                let style = '';
+                if (val === 'Buen estado') {
+                    style = 'background-color:#dcfce7; color:#166534; border:1px solid #bbf7d0;';
+                } else if (val === 'Mal estado') {
+                    style = 'background-color:#fee2e2; color:#991b1b; border:1px solid #fecaca; box-shadow: 0 0 2px rgba(239,68,68,0.3);';
+                } else if (val === 'No aplica') {
+                    style = 'background-color:#f3f4f6; color:#4b5563; border:1px solid #e5e7eb;';
+                } else {
+                    style = 'background-color:#fafafa; color:#a1a1aa; border:1px solid #e4e4e7;';
+                }
+                elementosResumenHtml += `<span title="${el.label}: ${val || 'Sin evaluar'}" style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:22px; border-radius:4px; font-weight:700; font-size:9px; cursor:help; transition:transform 0.15s; ${style}" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">${el.short}</span>`;
+            });
+            elementosResumenHtml += '</div>';
 
             html += `
                 <div class="timeline-item" style="position: relative; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-default); background: var(--bg-surface); transition: all 0.2s ease; margin-bottom: 8px;">
@@ -550,16 +557,19 @@ async function loadExtintorHistory(container, numeroSerie) {
                         </span>
                     </div>
                     
-                    <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border-light); display: flex; flex-direction: column; gap: 4px;">
+                    <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border-light); display: flex; flex-direction: column; gap: 6px;">
                         <div style="font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
                             <i data-lucide="map-pin" style="width: 12px; height: 12px; color: var(--text-muted);"></i>
                             <span>Lugar: <strong>${lugar}</strong></span>
                         </div>
-                        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; align-items: center;">
-                            <span style="font-size: 10px; color: var(--text-muted); font-weight: 500;">Componentes:</span>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; align-items: center;">
+                            <span style="font-size: 10px; color: var(--text-muted); font-weight: 500;">Resumen:</span>
                             ${badgesHtml}
                         </div>
-                        ${failedListHtml}
+                        <div style="margin-top: 4px;">
+                            <span style="font-size: 10px; color: var(--text-muted); font-weight: 500; display: block; margin-bottom: 4px;">Detalle de elementos:</span>
+                            ${elementosResumenHtml}
+                        </div>
                         ${observ}
                     </div>
                 </div>
