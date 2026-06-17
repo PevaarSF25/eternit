@@ -25,7 +25,15 @@ const routes = {
   },
   '#inventario-extintores': {
     loadView: () => import('./views/inventarioExtintoresView.js').then(m => m.renderInventarioExtintores),
-    title: 'Inventario de Extintores'
+    title: 'Extintores'
+  },
+  '#inventario-arneses': {
+    loadView: () => import('./views/inventarioArnesesView.js').then(m => m.renderInventarioArneses),
+    title: 'Arneses'
+  },
+  '#inspeccion-arneses': {
+    loadView: () => import('./views/inspeccionArnesesView.js').then(m => m.renderInspeccionArneses),
+    title: 'Inspección Arneses'
   }
 };
 

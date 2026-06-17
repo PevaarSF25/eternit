@@ -20,7 +20,7 @@ export async function renderInventarioExtintores(container) {
     container.innerHTML = `
     <div class="registro-container">
       <div class="registro-header" style="display:flex; flex-direction:column; align-items:stretch; gap:var(--space-4); margin-bottom:var(--space-6); width:100%;">
-        <h2>Inventario de Extintores</h2>
+        <h2>Extintores</h2>
         
         <div style="display:flex; align-items:center; width:100%; gap: 12px; flex-wrap: wrap;">
           <div class="search-wrapper" id="table-search-wrapper" style="position:relative; flex:0 1 400px;">
@@ -59,6 +59,10 @@ export async function renderInventarioExtintores(container) {
                         <div class="form-group">
                             <label for="input-numero_serie" class="form-label">Número de Serie</label>
                             <input type="text" class="form-input" id="input-numero_serie" name="numero_serie" required placeholder="Ej: EXT-01">
+                            <div id="estado-recepcion-form-badge" style="margin-top: 8px; display: none;">
+                                <span style="font-size: 10px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; display: block; margin-bottom: 2px;">Estado de Recepción</span>
+                                <span id="estado-recepcion-badge" style="display: inline-block; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 11px; text-transform: uppercase;"></span>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="input-tipo" class="form-label">Tipo de Extintor</label>
@@ -223,6 +227,12 @@ function resetForm(container) {
     // Ocultar sección de historial
     const historySection = container.querySelector('#historial-inspecciones-section');
     if (historySection) historySection.style.display = 'none';
+
+    // Ocultar badge de estado de recepción
+    const estadoRecepcionContainer = container.querySelector('#estado-recepcion-form-badge');
+    if (estadoRecepcionContainer) {
+        estadoRecepcionContainer.style.display = 'none';
+    }
 
     container.querySelector('#btn-guardar').innerHTML = '<i data-lucide="save"></i> Guardar Extintor';
     if (window.lucide) window.lucide.createIcons();
@@ -426,6 +436,17 @@ function loadRecordIntoForm(container, record) {
     container.querySelector('#input-ultima_recarga').value = record.ultima_recarga || '';
     container.querySelector('#input-estado').value = record.estado || 'Activo';
     
+    // Mostrar badge de estado de recepción
+    const estadoRecepcionContainer = container.querySelector('#estado-recepcion-form-badge');
+    const estadoRecepcionBadge = container.querySelector('#estado-recepcion-badge');
+    if (estadoRecepcionContainer && estadoRecepcionBadge) {
+        const estadoVisual = calcularEstadoVisual(record.vencimiento, record.estado);
+        estadoRecepcionBadge.textContent = estadoVisual.text;
+        estadoRecepcionBadge.style.backgroundColor = estadoVisual.bg;
+        estadoRecepcionBadge.style.color = estadoVisual.color;
+        estadoRecepcionContainer.style.display = 'block';
+    }
+    
     container.querySelector('#btn-guardar').innerHTML = '<i data-lucide="edit"></i> Actualizar Extintor';
     if (window.lucide) window.lucide.createIcons();
     
@@ -477,50 +498,54 @@ async function loadExtintorHistory(container, numeroSerie) {
             { key: 'estado_sello_garantia', label: 'Sello de garantía', short: 'SG' }
         ];
 
-        let html = `
-            <div style="display: flex; flex-direction: column; gap: var(--space-4); margin-top: 16px; position: relative; padding-left: 24px;">
-                <div style="position: absolute; left: 8px; top: 8px; bottom: 8px; width: 2px; background: var(--border-default);"></div>
-        `;
+        const thStyle = "padding:10px 12px; text-align:left; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-secondary); border-bottom:1px solid var(--border-default); white-space:nowrap; background:rgba(148,163,184,0.02);";
+        const tdStyle = "padding:10px 12px; font-size:12px; color:var(--text-secondary); border-bottom:1px solid var(--border-light); vertical-align:middle;";
 
+        let rowsHtml = '';
         history.forEach(item => {
             const insp = item.inspecciones_extintores || {};
             const fechaVal = insp.fecha || '—';
             
-            let formattedDate = fechaVal;
-            try {
-                if (fechaVal !== '—') {
-                    const parts = fechaVal.split('-');
-                    if (parts.length === 3) {
-                        const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
-                        formattedDate = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
-                    }
+            // Próxima recarga: 1 year after item.fecha_recarga (or if missing, 1 year after insp.fecha)
+            const fechaRecarga = item.fecha_recarga || fechaVal;
+            let proximaRecargaVal = '—';
+            if (fechaRecarga && fechaRecarga !== '—') {
+                try {
+                    const date = new Date(fechaRecarga + 'T00:00:00');
+                    date.setFullYear(date.getFullYear() + 1);
+                    const yyyy = date.getFullYear();
+                    const mm = String(date.getMonth() + 1).padStart(2, '0');
+                    const dd = String(date.getDate()).padStart(2, '0');
+                    proximaRecargaVal = `${dd}/${mm}/${yyyy}`;
+                } catch (e) {
+                    console.error(e);
                 }
-            } catch (e) {
-                console.error(e);
             }
 
             const inspector = insp.inspector_nombre || 'Desconocido';
             const cargo = insp.inspector_cargo ? ` (${insp.inspector_cargo})` : '';
+            const inspectorFull = `<strong>${inspector}</strong><span style="font-size:11px; color:var(--text-muted); display:block; margin-top:2px;">${cargo ? insp.inspector_cargo : ''}</span>`;
+            
             const lugar = insp.lugar_trabajo || 'No especificado';
-            const observ = insp.observaciones_generales ? `<p style="margin:8px 0 0 0; font-size:12px; font-style:italic; color:var(--text-muted); background:var(--bg-body); padding:6px 10px; border-radius:6px; border-left:3px solid var(--accent);"><strong style="color:var(--text-secondary);">Obs:</strong> ${insp.observaciones_generales}</p>` : '';
-
+            
             const states = ELEMENTOS_CLAVES.map(el => item[el.key]).filter(Boolean);
             const bCount = states.filter(v => v === 'Buen estado').length;
             const mCount = states.filter(v => v === 'Mal estado').length;
             const nCount = states.filter(v => v === 'No aplica').length;
 
             const isOperativo = mCount === 0;
-            const statusText = isOperativo ? 'Operativo' : 'Requiere Atención';
+            const statusText = isOperativo ? 'Operativo' : 'Atención';
             const statusBg = isOperativo ? 'var(--success-bg)' : 'var(--danger-bg)';
             const statusColor = isOperativo ? 'var(--success)' : 'var(--danger)';
 
-            let badgesHtml = '';
-            if (bCount > 0) badgesHtml += `<span style="padding: 2px 6px; border-radius: 4px; background: #e0f2fe; color: #0369a1; font-weight: 600; font-size: 10px;">🟢 B: ${bCount}</span>`;
-            if (mCount > 0) badgesHtml += `<span style="padding: 2px 6px; border-radius: 4px; background: #fee2e2; color: #b91c1c; font-weight: 600; font-size: 10px;">🔴 M: ${mCount}</span>`;
-            if (nCount > 0) badgesHtml += `<span style="padding: 2px 6px; border-radius: 4px; background: #ffedd5; color: #c2410c; font-weight: 600; font-size: 10px;">🟠 N: ${nCount}</span>`;
+            let badgesHtml = '<div style="display:flex; gap:3px; margin-top:4px;">';
+            if (bCount > 0) badgesHtml += `<span style="padding: 1px 4px; border-radius: 4px; background: #e0f2fe; color: #0369a1; font-weight: 600; font-size: 9px;">🟢 B: ${bCount}</span>`;
+            if (mCount > 0) badgesHtml += `<span style="padding: 1px 4px; border-radius: 4px; background: #fee2e2; color: #b91c1c; font-weight: 600; font-size: 9px;">🔴 M: ${mCount}</span>`;
+            if (nCount > 0) badgesHtml += `<span style="padding: 1px 4px; border-radius: 4px; background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; font-weight: 600; font-size: 9px;">⚪ N: ${nCount}</span>`;
+            badgesHtml += '</div>';
 
             // Construir resumen visual abreviado de todos los elementos
-            let elementosResumenHtml = '<div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">';
+            let elementosResumenHtml = '<div style="display:flex; flex-wrap:wrap; gap:3px;">';
             ELEMENTOS_CLAVES.forEach(el => {
                 const val = item[el.key] || '';
                 let style = '';
@@ -533,51 +558,53 @@ async function loadExtintorHistory(container, numeroSerie) {
                 } else {
                     style = 'background-color:#fafafa; color:#a1a1aa; border:1px solid #e4e4e7;';
                 }
-                elementosResumenHtml += `<span title="${el.label}: ${val || 'Sin evaluar'}" style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:22px; border-radius:4px; font-weight:700; font-size:9px; cursor:help; transition:transform 0.15s; ${style}" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">${el.short}</span>`;
+                elementosResumenHtml += `<span title="${el.label}: ${val || 'Sin evaluar'}" style="display:inline-flex; align-items:center; justify-content:center; width:25px; height:20px; border-radius:4px; font-weight:700; font-size:8px; cursor:help; transition:transform 0.15s; ${style}" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">${el.short}</span>`;
             });
             elementosResumenHtml += '</div>';
 
-            html += `
-                <div class="timeline-item" style="position: relative; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-default); background: var(--bg-surface); transition: all 0.2s ease; margin-bottom: 8px;">
-                    <div style="position: absolute; left: -21px; top: 18px; width: 10px; height: 10px; border-radius: 50%; background: ${isOperativo ? 'var(--success)' : 'var(--danger)'}; border: 3px solid var(--bg-body); box-shadow: 0 0 0 2px ${isOperativo ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'};"></div>
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;">
-                        <div>
-                            <span style="font-weight: 700; color: var(--text-primary); font-size: 13px; display: inline-flex; align-items: center; gap: 6px;">
-                                <i data-lucide="calendar" style="width: 13px; height: 13px; color: var(--accent);"></i>
-                                ${formattedDate}
-                            </span>
-                            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 2px;">
-                                Inspector: <strong style="color: var(--text-secondary);">${inspector}</strong>${cargo}
-                            </span>
-                        </div>
-                        
-                        <span style="padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; background: ${statusBg}; color: ${statusColor}; letter-spacing: 0.3px;">
-                            ${statusText}
-                        </span>
-                    </div>
-                    
-                    <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border-light); display: flex; flex-direction: column; gap: 6px;">
-                        <div style="font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
-                            <i data-lucide="map-pin" style="width: 12px; height: 12px; color: var(--text-muted);"></i>
-                            <span>Lugar: <strong>${lugar}</strong></span>
-                        </div>
-                        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; align-items: center;">
-                            <span style="font-size: 10px; color: var(--text-muted); font-weight: 500;">Resumen:</span>
-                            ${badgesHtml}
-                        </div>
-                        <div style="margin-top: 4px;">
-                            <span style="font-size: 10px; color: var(--text-muted); font-weight: 500; display: block; margin-bottom: 4px;">Detalle de elementos:</span>
+            const observ = insp.observaciones_generales ? `<p style="margin:4px 0 0 0; font-size:11px; font-style:italic; color:var(--text-muted);"><strong style="color:var(--text-secondary);">Obs:</strong> ${insp.observaciones_generales}</p>` : '';
+
+            rowsHtml += `
+                <tr>
+                    <td style="${tdStyle}">
+                        <div style="font-weight:600; color:var(--text-primary);">${proximaRecargaVal}</div>
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Inspección: ${fechaVal}</div>
+                    </td>
+                    <td style="${tdStyle}">${inspectorFull}</td>
+                    <td style="${tdStyle}">${lugar}</td>
+                    <td style="${tdStyle}">
+                        <div style="display:flex; flex-direction:column; gap:4px;">
                             ${elementosResumenHtml}
+                            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:2px;">
+                                <span style="padding: 2px 6px; border-radius: 12px; font-size: 9px; font-weight: 700; text-transform: uppercase; background: ${statusBg}; color: ${statusColor};">${statusText}</span>
+                                ${badgesHtml}
+                            </div>
+                            ${observ}
                         </div>
-                        ${observ}
-                    </div>
-                </div>
+                    </td>
+                </tr>
             `;
         });
 
-        html += '</div>';
-        listContainer.innerHTML = html;
+        const tableHtml = `
+            <div style="overflow-x:auto; border-radius:12px; border:1px solid var(--border-default); background:var(--bg-surface); margin-top: 16px;">
+                <table style="width:100%; border-collapse:collapse; text-align:left; font-family:'Inter',sans-serif;">
+                    <thead>
+                        <tr>
+                            <th style="${thStyle}">Próxima Recarga</th>
+                            <th style="${thStyle}">Inspector</th>
+                            <th style="${thStyle}">Lugar de Trabajo</th>
+                            <th style="${thStyle}">Detalle de Elementos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        listContainer.innerHTML = tableHtml;
         if (window.lucide) window.lucide.createIcons({ nodes: [listContainer] });
 
     } catch (err) {

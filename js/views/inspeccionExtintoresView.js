@@ -259,8 +259,8 @@ function getExtintorCardHTML(index, data = {}) {
             : 'background-color: #fef2f2; color: #dc2626; border-color: #fecaca; opacity: 0.6;';
 
         const styleN = isN 
-            ? 'background-color: #c2410c; color: #ffffff; border-color: #c2410c; opacity: 1;' 
-            : 'background-color: #fff7ed; color: #ea580c; border-color: #ffedd5; opacity: 0.6;';
+            ? 'background-color: #4b5563; color: #ffffff; border-color: #4b5563; opacity: 1;' 
+            : 'background-color: #f3f4f6; color: #4b5563; border-color: #e5e7eb; opacity: 0.6;';
         
         return `
         <div class="form-group" style="display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;">
@@ -294,25 +294,25 @@ function getExtintorCardHTML(index, data = {}) {
             </div>
             <div class="form-group">
                 <label class="form-label">Tipo</label>
-                <select class="form-select extintor-param-codigo" data-field="tipo" required disabled style="background-color: var(--bg-body); cursor: not-allowed;">
+                <select class="form-select extintor-param-codigo" data-field="tipo" required disabled style="background-color: #e2e8f0; color: var(--text-secondary); cursor: not-allowed; border: 1px solid var(--border-default);">
                     <option value="" disabled ${!data.tipo ? 'selected' : ''}>Seleccione...</option>
                     ${window._paramExtintorCodigos ? window._paramExtintorCodigos.map(p => `<option value="${p.valor}" ${data.tipo === p.valor ? 'selected' : ''}>${p.valor}</option>`).join('') : ''}
                 </select>
             </div>
             <div class="form-group">
                 <label class="form-label">Capacidad</label>
-                <input type="text" class="form-input" data-field="capacidad" value="${data.capacidad || ''}" required placeholder="..." disabled style="background-color: var(--bg-body); cursor: not-allowed;">
+                <input type="text" class="form-input" data-field="capacidad" value="${data.capacidad || ''}" required placeholder="..." disabled style="background-color: #e2e8f0; color: var(--text-secondary); cursor: not-allowed; border: 1px solid var(--border-default);">
             </div>
             <div class="form-group">
                 <label class="form-label">Ubicación</label>
-                <select class="form-select extintor-param-ubicacion" data-field="ubicacion" required disabled style="background-color: var(--bg-body); cursor: not-allowed;">
+                <select class="form-select extintor-param-ubicacion" data-field="ubicacion" required disabled style="background-color: #e2e8f0; color: var(--text-secondary); cursor: not-allowed; border: 1px solid var(--border-default);">
                     <option value="" disabled ${!data.ubicacion ? 'selected' : ''}>Seleccione...</option>
                     ${window._paramExtintorUbicaciones ? window._paramExtintorUbicaciones.map(p => `<option value="${p.valor}" ${data.ubicacion === p.valor ? 'selected' : ''}>${p.valor}</option>`).join('') : ''}
                 </select>
             </div>
             <div class="form-group">
                 <label class="form-label">Fecha de Recarga</label>
-                <input type="date" class="form-input" data-field="fecha_recarga" value="${data.fecha_recarga || ''}" required disabled style="background-color: var(--bg-body); cursor: not-allowed;">
+                <input type="date" class="form-input" data-field="fecha_recarga" value="${data.fecha_recarga || ''}" required disabled style="background-color: #e2e8f0; color: var(--text-secondary); cursor: not-allowed; border: 1px solid var(--border-default);">
             </div>
         </div>
         
@@ -347,10 +347,10 @@ function addExtintorCard(container, data = {}) {
             const fieldFechaRecarga = newCard.querySelector('[data-field="fecha_recarga"]');
             
             if (extintor) {
-                if(fieldTipo) { fieldTipo.value = extintor.tipo; fieldTipo.disabled = true; fieldTipo.style.backgroundColor = 'var(--bg-body)'; }
-                if(fieldCapacidad) { fieldCapacidad.value = extintor.capacidad; fieldCapacidad.disabled = true; fieldCapacidad.style.backgroundColor = 'var(--bg-body)'; }
-                if(fieldUbicacion) { fieldUbicacion.value = extintor.ubicacion; fieldUbicacion.disabled = true; fieldUbicacion.style.backgroundColor = 'var(--bg-body)'; }
-                if(fieldFechaRecarga) { fieldFechaRecarga.value = extintor.ultima_recarga; fieldFechaRecarga.disabled = true; fieldFechaRecarga.style.backgroundColor = 'var(--bg-body)'; }
+                if(fieldTipo) { fieldTipo.value = extintor.tipo; fieldTipo.disabled = true; fieldTipo.style.backgroundColor = '#e2e8f0'; }
+                if(fieldCapacidad) { fieldCapacidad.value = extintor.capacidad; fieldCapacidad.disabled = true; fieldCapacidad.style.backgroundColor = '#e2e8f0'; }
+                if(fieldUbicacion) { fieldUbicacion.value = extintor.ubicacion; fieldUbicacion.disabled = true; fieldUbicacion.style.backgroundColor = '#e2e8f0'; }
+                if(fieldFechaRecarga) { fieldFechaRecarga.value = extintor.ultima_recarga; fieldFechaRecarga.disabled = true; fieldFechaRecarga.style.backgroundColor = '#e2e8f0'; }
             } else if (!data.codigo) {
                 if(fieldTipo) { fieldTipo.value = ''; fieldTipo.disabled = true; }
                 if(fieldCapacidad) { fieldCapacidad.value = ''; fieldCapacidad.disabled = true; }
@@ -384,9 +384,9 @@ function addExtintorCard(container, data = {}) {
             }
             // Reset N
             if (selectedValue === 'No aplica') {
-                btnN.style.cssText = 'flex: 1; height: 30px; font-weight: 700; font-size: 13px; border: 1px solid #c2410c; border-radius: 6px; cursor: pointer; transition: all 0.2s; background-color: #c2410c; color: #ffffff; opacity: 1;';
+                btnN.style.cssText = 'flex: 1; height: 30px; font-weight: 700; font-size: 13px; border: 1px solid #4b5563; border-radius: 6px; cursor: pointer; transition: all 0.2s; background-color: #4b5563; color: #ffffff; opacity: 1;';
             } else {
-                btnN.style.cssText = 'flex: 1; height: 30px; font-weight: 700; font-size: 13px; border: 1px solid #ffedd5; border-radius: 6px; cursor: pointer; transition: all 0.2s; background-color: #fff7ed; color: #ea580c; opacity: 0.6;';
+                btnN.style.cssText = 'flex: 1; height: 30px; font-weight: 700; font-size: 13px; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s; background-color: #f3f4f6; color: #4b5563; opacity: 0.6;';
             }
         };
 
@@ -508,7 +508,7 @@ function getEstadosBadgesHtml(det) {
     let html = '<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">';
     if (bCount > 0) html += `<span title="Buen estado: ${bCount} elemento(s)" style="display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:12px;background:#15803d;color:#fff;font-weight:700;font-size:11px;cursor:default;">B <span style="font-weight:400;opacity:0.85;">${bCount}</span></span>`;
     if (mCount > 0) html += `<span title="Mal estado: ${mCount} elemento(s)" style="display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:12px;background:#b91c1c;color:#fff;font-weight:700;font-size:11px;cursor:default;">M <span style="font-weight:400;opacity:0.85;">${mCount}</span></span>`;
-    if (nCount > 0) html += `<span title="No aplica: ${nCount} elemento(s)" style="display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:12px;background:#c2410c;color:#fff;font-weight:700;font-size:11px;cursor:default;">N <span style="font-weight:400;opacity:0.85;">${nCount}</span></span>`;
+    if (nCount > 0) html += `<span title="No aplica: ${nCount} elemento(s)" style="display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:12px;background:#4b5563;color:#fff;font-weight:700;font-size:11px;cursor:default;">N <span style="font-weight:400;opacity:0.85;">${nCount}</span></span>`;
     html += '</div>';
     return html;
 }
@@ -566,35 +566,31 @@ async function refreshTable(container, forceFetch = false) {
         if (window.lucide) window.lucide.createIcons({ nodes: [tableContainer] });
         return;
     }
-
     let rowsHtml = '';
     displayRows.forEach((insp, inspIdx) => {
         const detalles = insp.extintores_detalle || [];
-        const rowCount = Math.max(detalles.length, 1);
         const borderTop = inspIdx > 0 ? '3px solid var(--border-default)' : 'none';
         const bgRow = inspIdx % 2 === 0 ? 'var(--bg-surface)' : 'rgba(148,163,184,0.04)';
-        const cellStyleHeader = `padding:10px; font-size:12px; color:var(--text-secondary); white-space:nowrap; vertical-align:middle; border-right:1px solid var(--border-light);`;
+        const cellStyleHeader = `padding:10px; font-size:12px; color:var(--text-secondary); white-space:nowrap; vertical-align:middle; border-right:1px solid var(--border-light); border-bottom:1px solid var(--border-light);`;
 
         if (detalles.length === 0) {
             rowsHtml += `
             <tr style="border-top:${borderTop}; background:${bgRow};">
-                <td style="${cellStyleHeader} font-weight:600; color:var(--text-primary);" rowspan="1">${insp.fecha || '\u2014'}</td>
-                <td style="${cellStyleHeader}" rowspan="1">${insp.lugar_trabajo || '\u2014'}</td>
-                <td style="${cellStyleHeader}" rowspan="1">${insp.inspector_nombre || '\u2014'}</td>
-                <td colspan="4" style="padding:10px; font-size:12px; color:var(--text-muted); font-style:italic;">Sin extintores registrados</td>
-                <td rowspan="1" style="padding:10px; text-align:center; vertical-align:middle;">${getActionButtons(insp.id)}</td>
+                <td style="${cellStyleHeader} font-weight:600; color:var(--text-primary);">${insp.fecha || '\u2014'}</td>
+                <td style="${cellStyleHeader}">${insp.lugar_trabajo || '\u2014'}</td>
+                <td style="${cellStyleHeader}">${insp.inspector_nombre || '\u2014'}</td>
+                <td colspan="4" style="padding:10px; font-size:12px; color:var(--text-muted); font-style:italic; border-bottom:1px solid var(--border-light); border-right:1px solid var(--border-light);">Sin extintores registrados</td>
+                <td style="padding:10px; text-align:center; vertical-align:middle; border-bottom:1px solid var(--border-light);">${getActionButtons(insp.id)}</td>
             </tr>`;
         } else {
             detalles.forEach((det, detIdx) => {
+                const cellStyleDet = `padding:8px 10px; font-size:12px; color:var(--text-secondary); white-space:nowrap; border-bottom:1px solid var(--border-light); border-right:1px solid var(--border-light);`;
                 const isFirst = detIdx === 0;
-                const cellStyleDet = `padding:8px 10px; font-size:12px; color:var(--text-secondary); white-space:nowrap; border-bottom:1px dashed var(--border-light);`;
                 rowsHtml += `
                 <tr style="${isFirst ? `border-top:${borderTop};` : ''} background:${bgRow};">
-                    ${isFirst ? `
-                    <td rowspan="${rowCount}" style="${cellStyleHeader} font-weight:600; color:var(--text-primary);">${insp.fecha || '\u2014'}</td>
-                    <td rowspan="${rowCount}" style="${cellStyleHeader}">${insp.lugar_trabajo || '\u2014'}</td>
-                    <td rowspan="${rowCount}" style="${cellStyleHeader}">${insp.inspector_nombre || '\u2014'}</td>
-                    ` : ''}
+                    <td style="${cellStyleHeader} font-weight:600; color:var(--text-primary);">${insp.fecha || '\u2014'}</td>
+                    <td style="${cellStyleHeader}">${insp.lugar_trabajo || '\u2014'}</td>
+                    <td style="${cellStyleHeader}">${insp.inspector_nombre || '\u2014'}</td>
                     <td style="${cellStyleDet} font-weight:600; color:var(--text-primary);">
                         <span style="display:inline-flex;align-items:center;gap:6px;">
                             <span style="font-size:10px;color:var(--text-muted);">#${detIdx + 1}</span>
@@ -603,10 +599,8 @@ async function refreshTable(container, forceFetch = false) {
                     </td>
                     <td style="${cellStyleDet}">${det.tipo || '\u2014'}</td>
                     <td style="${cellStyleDet}">${det.capacidad || '\u2014'}</td>
-                    <td style="padding:8px 10px; border-bottom:1px dashed var(--border-light);">${getEstadosBadgesHtml(det)}</td>
-                    ${isFirst ? `
-                    <td rowspan="${rowCount}" style="padding:10px; text-align:center; vertical-align:middle; border-left:1px solid var(--border-light);">${getActionButtons(insp.id)}</td>
-                    ` : ''}
+                    <td style="padding:8px 10px; border-bottom:1px solid var(--border-light); border-right:1px solid var(--border-light);">${getEstadosBadgesHtml(det)}</td>
+                    <td style="padding:10px; text-align:center; vertical-align:middle; border-bottom:1px solid var(--border-light);">${getActionButtons(insp.id)}</td>
                 </tr>`;
             });
         }
@@ -625,7 +619,7 @@ async function refreshTable(container, forceFetch = false) {
                         <th style="${thStyle}">C\u00d3DIGO / #</th>
                         <th style="${thStyle}">TIPO</th>
                         <th style="${thStyle}">CAPACIDAD</th>
-                        <th style="${thStyle}">ESTADOS</th>
+                        <th style="${thStyle}">ESTADOS R</th>
                         <th style="${thStyle} text-align:center; width:110px;">ACCIONES</th>
                     </tr>
                 </thead>

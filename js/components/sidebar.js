@@ -27,7 +27,8 @@ const MENU_ITEMS = [
         icon: 'package',
         isCollapse: true,
         children: [
-            { label: 'Inventario Extintores', hash: '#inventario-extintores' }
+            { label: 'Extintores', hash: '#inventario-extintores' },
+            { label: 'Arneses', hash: '#inventario-arneses' }
         ]
     },
     { 
@@ -35,7 +36,8 @@ const MENU_ITEMS = [
         icon: 'shield-check', 
         isCollapse: true,
         children: [
-            { label: 'Inspección Extintores', hash: '#inspeccion-extintores' }
+            { label: 'Inspección Extintores', hash: '#inspeccion-extintores' },
+            { label: 'Inspección Arneses', hash: '#inspeccion-arneses' }
         ]
     }
 ];

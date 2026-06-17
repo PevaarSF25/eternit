@@ -8,7 +8,8 @@ const categories = [
   { id: 'ciudad', code: 'PAR-001', name: 'Centros de trabajo (Plantas)' },
   { id: 'empresa', code: 'PAR-002', name: 'Empresa' },
   { id: 'extintor_codigo', code: 'PAR-003', name: 'Tipo Extintor' },
-  { id: 'extintor_ubicacion', code: 'PAR-004', name: 'Ubicación' }
+  { id: 'extintor_ubicacion', code: 'PAR-004', name: 'Ubicación' },
+  { id: 'arnes_tipo', code: 'PAR-005', name: 'Tipo de Equipo' }
 ];
 
 // --- State ---
