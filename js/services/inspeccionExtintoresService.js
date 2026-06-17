@@ -7,7 +7,7 @@ export async function getAllInspecciones() {
             .from('inspecciones_extintores')
             .select(`
                 *,
-                extintores:extintores_detalle ( count )
+                extintores_detalle (*)
             `)
             .order('fecha', { ascending: false });
 
@@ -19,7 +19,7 @@ export async function getAllInspecciones() {
         // Map data to easily access extintores count
         const mappedData = data.map(item => ({
             ...item,
-            total_extintores: item.extintores && item.extintores[0] ? item.extintores[0].count : 0
+            total_extintores: item.extintores_detalle ? item.extintores_detalle.length : 0
         }));
 
         return { data: mappedData, error: null };

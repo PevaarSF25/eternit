@@ -244,15 +244,33 @@ function bindEvents(container) {
 function getExtintorCardHTML(index, data = {}) {
     const elementosHtml = ELEMENTOS_LISTA.map(elem => {
         const selectedValue = data[elem.key] || '';
-        const optionsHtml = ELEMENTOS_ESTADOS.map(est => `<option value="${est}" ${selectedValue === est ? 'selected' : ''}>${est}</option>`).join('');
+        
+        // Define button styles based on selected state
+        const isB = selectedValue === 'Buen estado';
+        const isM = selectedValue === 'Mal estado';
+        const isN = selectedValue === 'No aplica';
+
+        const styleB = isB 
+            ? 'background-color: #15803d; color: #ffffff; border-color: #15803d; opacity: 1;' 
+            : 'background-color: #f0fdf4; color: #16a34a; border-color: #bbf7d0; opacity: 0.6;';
+
+        const styleM = isM 
+            ? 'background-color: #b91c1c; color: #ffffff; border-color: #b91c1c; opacity: 1;' 
+            : 'background-color: #fef2f2; color: #dc2626; border-color: #fecaca; opacity: 0.6;';
+
+        const styleN = isN 
+            ? 'background-color: #c2410c; color: #ffffff; border-color: #c2410c; opacity: 1;' 
+            : 'background-color: #fff7ed; color: #ea580c; border-color: #ffedd5; opacity: 0.6;';
         
         return `
-        <div class="form-group">
-            <label class="form-label" style="font-size:var(--text-xs); color:var(--text-secondary); margin-bottom:4px;">${elem.label}</label>
-            <select class="form-select" data-field="${elem.key}" required style="padding:4px 8px; font-size:var(--text-sm); height:auto;">
-                <option value="" disabled ${!selectedValue ? 'selected' : ''}>Selec...</option>
-                ${optionsHtml}
-            </select>
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;">
+            <label class="form-label" style="font-size:11px; font-weight:600; color:var(--text-secondary); margin-bottom:0; text-align:center; white-space:nowrap;">${elem.label}</label>
+            <div class="status-btn-group" style="display: flex; gap: 4px; width: 100%;">
+                <button type="button" class="status-btn btn-b" data-value="Buen estado" title="Buen estado" style="flex: 1; height: 30px; font-weight: 700; font-size: 13px; border: 1px solid; border-radius: 6px; cursor: pointer; transition: all 0.2s; ${styleB}">B</button>
+                <button type="button" class="status-btn btn-m" data-value="Mal estado" title="Mal estado" style="flex: 1; height: 30px; font-weight: 700; font-size: 13px; border: 1px solid; border-radius: 6px; cursor: pointer; transition: all 0.2s; ${styleM}">M</button>
+                <button type="button" class="status-btn btn-n" data-value="No aplica" title="No aplica" style="flex: 1; height: 30px; font-weight: 700; font-size: 13px; border: 1px solid; border-radius: 6px; cursor: pointer; transition: all 0.2s; ${styleN}">N</button>
+            </div>
+            <input type="hidden" data-field="${elem.key}" value="${selectedValue}" required>
         </div>
         `;
     }).join('');
@@ -271,35 +289,36 @@ function getExtintorCardHTML(index, data = {}) {
                 <select class="form-select selector-codigo-extintor" data-field="codigo" required>
                     <option value="" disabled ${!data.codigo ? 'selected' : ''}>Seleccione un extintor...</option>
                     ${window._inventarioExtintores ? window._inventarioExtintores.map(ext => `<option value="${ext.numero_serie}" ${data.codigo === ext.numero_serie ? 'selected' : ''}>${ext.numero_serie} (${ext.tipo})</option>`).join('') : ''}
+                    ${data.codigo && (!window._inventarioExtintores || !window._inventarioExtintores.some(e => e.numero_serie === data.codigo)) ? `<option value="${data.codigo}" selected>${data.codigo} (Inactivo/Eliminado)</option>` : ''}
                 </select>
             </div>
             <div class="form-group">
                 <label class="form-label">Tipo</label>
-                <select class="form-select extintor-param-codigo" data-field="tipo" required>
+                <select class="form-select extintor-param-codigo" data-field="tipo" required disabled style="background-color: var(--bg-body); cursor: not-allowed;">
                     <option value="" disabled ${!data.tipo ? 'selected' : ''}>Seleccione...</option>
                     ${window._paramExtintorCodigos ? window._paramExtintorCodigos.map(p => `<option value="${p.valor}" ${data.tipo === p.valor ? 'selected' : ''}>${p.valor}</option>`).join('') : ''}
                 </select>
             </div>
             <div class="form-group">
                 <label class="form-label">Capacidad</label>
-                <input type="text" class="form-input" data-field="capacidad" value="${data.capacidad || ''}" required placeholder="Ej: 10 lbs">
+                <input type="text" class="form-input" data-field="capacidad" value="${data.capacidad || ''}" required placeholder="..." disabled style="background-color: var(--bg-body); cursor: not-allowed;">
             </div>
             <div class="form-group">
                 <label class="form-label">Ubicación</label>
-                <select class="form-select extintor-param-ubicacion" data-field="ubicacion" required>
+                <select class="form-select extintor-param-ubicacion" data-field="ubicacion" required disabled style="background-color: var(--bg-body); cursor: not-allowed;">
                     <option value="" disabled ${!data.ubicacion ? 'selected' : ''}>Seleccione...</option>
                     ${window._paramExtintorUbicaciones ? window._paramExtintorUbicaciones.map(p => `<option value="${p.valor}" ${data.ubicacion === p.valor ? 'selected' : ''}>${p.valor}</option>`).join('') : ''}
                 </select>
             </div>
             <div class="form-group">
                 <label class="form-label">Fecha de Recarga</label>
-                <input type="date" class="form-input" data-field="fecha_recarga" value="${data.fecha_recarga || ''}" required>
+                <input type="date" class="form-input" data-field="fecha_recarga" value="${data.fecha_recarga || ''}" required disabled style="background-color: var(--bg-body); cursor: not-allowed;">
             </div>
         </div>
         
-        <div style="border-top:1px solid var(--border-light); padding-top:var(--space-3); margin-top:var(--space-3);">
-            <h5 style="margin-top:0; margin-bottom:var(--space-3); color:var(--text-secondary); font-size:var(--text-sm); text-transform:uppercase; letter-spacing:0.5px;">Estado de Elementos</h5>
-            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:var(--space-2);">
+        <div style="border-top:1px solid var(--border-light); padding-top:var(--space-4); margin-top:var(--space-3);">
+            <h5 style="margin-top:0; margin-bottom:var(--space-4); color:var(--text-secondary); font-size:var(--text-sm); text-transform:uppercase; letter-spacing:0.5px; text-align:center;">Estado de Elementos</h5>
+            <div style="display:grid; grid-template-columns: repeat(8, 1fr); gap: 12px 16px;">
                 ${elementosHtml}
             </div>
         </div>
@@ -315,7 +334,7 @@ function addExtintorCard(container, data = {}) {
     extContainer.insertAdjacentHTML('beforeend', getExtintorCardHTML(index, data));
     const newCard = extContainer.lastElementChild;
     
-    // Add logic for auto-complete from inventory
+    // 1. Add logic for auto-complete from inventory
     const selectorCodigo = newCard.querySelector('.selector-codigo-extintor');
     if (selectorCodigo) {
         const handleAutocomplete = () => {
@@ -332,21 +351,56 @@ function addExtintorCard(container, data = {}) {
                 if(fieldCapacidad) { fieldCapacidad.value = extintor.capacidad; fieldCapacidad.disabled = true; fieldCapacidad.style.backgroundColor = 'var(--bg-body)'; }
                 if(fieldUbicacion) { fieldUbicacion.value = extintor.ubicacion; fieldUbicacion.disabled = true; fieldUbicacion.style.backgroundColor = 'var(--bg-body)'; }
                 if(fieldFechaRecarga) { fieldFechaRecarga.value = extintor.ultima_recarga; fieldFechaRecarga.disabled = true; fieldFechaRecarga.style.backgroundColor = 'var(--bg-body)'; }
-            } else {
-                if(fieldTipo) { fieldTipo.disabled = false; fieldTipo.style.backgroundColor = ''; }
-                if(fieldCapacidad) { fieldCapacidad.disabled = false; fieldCapacidad.style.backgroundColor = ''; }
-                if(fieldUbicacion) { fieldUbicacion.disabled = false; fieldUbicacion.style.backgroundColor = ''; }
-                if(fieldFechaRecarga) { fieldFechaRecarga.disabled = false; fieldFechaRecarga.style.backgroundColor = ''; }
+            } else if (!data.codigo) {
+                if(fieldTipo) { fieldTipo.value = ''; fieldTipo.disabled = true; }
+                if(fieldCapacidad) { fieldCapacidad.value = ''; fieldCapacidad.disabled = true; }
+                if(fieldUbicacion) { fieldUbicacion.value = ''; fieldUbicacion.disabled = true; }
+                if(fieldFechaRecarga) { fieldFechaRecarga.value = ''; fieldFechaRecarga.disabled = true; }
             }
         };
 
         selectorCodigo.addEventListener('change', handleAutocomplete);
-        
-        // Trigger immediately if we loaded existing data
-        if (data.codigo) {
-            handleAutocomplete();
-        }
     }
+
+    // 2. Add logic for button states in "Estado de Elementos"
+    newCard.querySelectorAll('.status-btn-group').forEach(group => {
+        const hiddenInput = group.nextElementSibling; // the input type="hidden"
+        const btnB = group.querySelector('.btn-b');
+        const btnM = group.querySelector('.btn-m');
+        const btnN = group.querySelector('.btn-n');
+
+        const updateBtnStyles = (selectedValue) => {
+            // Reset B
+            if (selectedValue === 'Buen estado') {
+                btnB.style.cssText = 'flex: 1; height: 30px; font-weight: 700; font-size: 13px; border: 1px solid #15803d; border-radius: 6px; cursor: pointer; transition: all 0.2s; background-color: #15803d; color: #ffffff; opacity: 1;';
+            } else {
+                btnB.style.cssText = 'flex: 1; height: 30px; font-weight: 700; font-size: 13px; border: 1px solid #bbf7d0; border-radius: 6px; cursor: pointer; transition: all 0.2s; background-color: #f0fdf4; color: #16a34a; opacity: 0.6;';
+            }
+            // Reset M
+            if (selectedValue === 'Mal estado') {
+                btnM.style.cssText = 'flex: 1; height: 30px; font-weight: 700; font-size: 13px; border: 1px solid #b91c1c; border-radius: 6px; cursor: pointer; transition: all 0.2s; background-color: #b91c1c; color: #ffffff; opacity: 1;';
+            } else {
+                btnM.style.cssText = 'flex: 1; height: 30px; font-weight: 700; font-size: 13px; border: 1px solid #fecaca; border-radius: 6px; cursor: pointer; transition: all 0.2s; background-color: #fef2f2; color: #dc2626; opacity: 0.6;';
+            }
+            // Reset N
+            if (selectedValue === 'No aplica') {
+                btnN.style.cssText = 'flex: 1; height: 30px; font-weight: 700; font-size: 13px; border: 1px solid #c2410c; border-radius: 6px; cursor: pointer; transition: all 0.2s; background-color: #c2410c; color: #ffffff; opacity: 1;';
+            } else {
+                btnN.style.cssText = 'flex: 1; height: 30px; font-weight: 700; font-size: 13px; border: 1px solid #ffedd5; border-radius: 6px; cursor: pointer; transition: all 0.2s; background-color: #fff7ed; color: #ea580c; opacity: 0.6;';
+            }
+        };
+
+        group.addEventListener('click', (e) => {
+            const fieldset = container.querySelector('#form-fieldset');
+            if (fieldset && fieldset.disabled) return; // ignore clicks if read-only
+            
+            const btn = e.target.closest('.status-btn');
+            if (!btn) return;
+            const val = btn.dataset.value;
+            hiddenInput.value = val;
+            updateBtnStyles(val);
+        });
+    });
     
     // Re-init icons
     if (window.lucide) window.lucide.createIcons({ nodes: [newCard] });
@@ -443,10 +497,41 @@ async function saveRecord(container) {
     }
 }
 
+function getEstadosBadgesHtml(det) {
+    const vals = ELEMENTOS_LISTA.map(el => det[el.key]).filter(Boolean);
+    if (vals.length === 0) return '<span style="color:var(--text-muted); font-size:11px;">Sin evaluar</span>';
+
+    const bCount = vals.filter(v => v === 'Buen estado').length;
+    const mCount = vals.filter(v => v === 'Mal estado').length;
+    const nCount = vals.filter(v => v === 'No aplica').length;
+
+    let html = '<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">';
+    if (bCount > 0) html += `<span title="Buen estado: ${bCount} elemento(s)" style="display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:12px;background:#15803d;color:#fff;font-weight:700;font-size:11px;cursor:default;">B <span style="font-weight:400;opacity:0.85;">${bCount}</span></span>`;
+    if (mCount > 0) html += `<span title="Mal estado: ${mCount} elemento(s)" style="display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:12px;background:#b91c1c;color:#fff;font-weight:700;font-size:11px;cursor:default;">M <span style="font-weight:400;opacity:0.85;">${mCount}</span></span>`;
+    if (nCount > 0) html += `<span title="No aplica: ${nCount} elemento(s)" style="display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:12px;background:#c2410c;color:#fff;font-weight:700;font-size:11px;cursor:default;">N <span style="font-weight:400;opacity:0.85;">${nCount}</span></span>`;
+    html += '</div>';
+    return html;
+}
+
+function getActionButtons(id) {
+    return `
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
+        <button data-action="view" data-id="${id}" title="Ver" style="background:var(--accent-bg);border:1px solid var(--border-focus);border-radius:6px;padding:6px;cursor:pointer;color:var(--accent);display:flex;align-items:center;">
+            <i data-lucide="eye" style="width:14px;height:14px;"></i>
+        </button>
+        <button data-action="edit" data-id="${id}" title="Editar" style="background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.2);border-radius:6px;padding:6px;cursor:pointer;color:#00b4d8;display:flex;align-items:center;">
+            <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+        </button>
+        <button data-action="delete" data-id="${id}" title="Eliminar" style="background:var(--danger-bg);border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:6px;cursor:pointer;color:var(--danger);display:flex;align-items:center;">
+            <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+        </button>
+    </div>`;
+}
+
 async function refreshTable(container, forceFetch = false) {
     const tableContainer = container.querySelector('#table-container');
-    
-    if (!dataTableInstance) {
+
+    if (!cachedInspecciones) {
         tableContainer.innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
     }
 
@@ -459,61 +544,121 @@ async function refreshTable(container, forceFetch = false) {
         cachedInspecciones = res.data || [];
     }
 
-    const searchInput = container.querySelector('#table-search-input');
-    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
-
-    const filterByQuery = (records) => {
-        if (!query) return records;
-        return records.filter(r => {
-            const str = `
-                ${r.lugar_trabajo || ''} 
-                ${r.fecha || ''} 
-                ${r.inspector_nombre || ''}
-            `.toLowerCase();
-            return str.includes(query);
-        });
-    };
-
-    const displayRows = filterByQuery(cachedInspecciones);
-
     if (dataTableInstance) {
         dataTableInstance.destroy();
         dataTableInstance = null;
     }
 
-    const columns = [
-        { key: 'fecha', label: 'FECHA' },
-        { key: 'lugar_trabajo', label: 'LUGAR DE TRABAJO' },
-        { key: 'inspector_nombre', label: 'INSPECTOR' },
-        { 
-            key: 'total_extintores', 
-            label: 'EXTINTORES',
-            format: (v) => `<span style="background:var(--info-bg); color:var(--info); padding:4px 8px; border-radius:12px; font-weight:bold; font-size:12px;">${v || 0}</span>`
-        }
-    ];
+    const searchInput = container.querySelector('#table-search-input');
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
-    dataTableInstance = createDataTable({
-        containerId: 'table-container',
-        columns,
-        data: displayRows,
-        onView: async (record) => {
-            await openRecordForEdit(container, record.id, true);
-        },
-        onEdit: async (record) => {
-            await openRecordForEdit(container, record.id, false);
-        },
-        onDelete: async (record) => {
-            const confirmed = await showConfirmModal('Eliminar', `¿Seguro que desea eliminar la inspección del ${record.fecha}?`);
+    const displayRows = cachedInspecciones.filter(r => {
+        if (!query) return true;
+        return `${r.lugar_trabajo || ''} ${r.fecha || ''} ${r.inspector_nombre || ''}`.toLowerCase().includes(query);
+    });
+
+    if (displayRows.length === 0) {
+        tableContainer.innerHTML = `
+            <div style="text-align:center; padding:48px 24px; color:#5a6a7a; font-size:14px; border-radius:12px; border:1px solid var(--border-default); background:var(--bg-surface);">
+                <i data-lucide="inbox" style="width:48px;height:48px;margin-bottom:16px;opacity:0.4;display:block;margin-left:auto;margin-right:auto;"></i>
+                <p style="margin:0;">No hay inspecciones guardadas.</p>
+            </div>`;
+        if (window.lucide) window.lucide.createIcons({ nodes: [tableContainer] });
+        return;
+    }
+
+    let rowsHtml = '';
+    displayRows.forEach((insp, inspIdx) => {
+        const detalles = insp.extintores_detalle || [];
+        const rowCount = Math.max(detalles.length, 1);
+        const borderTop = inspIdx > 0 ? '3px solid var(--border-default)' : 'none';
+        const bgRow = inspIdx % 2 === 0 ? 'var(--bg-surface)' : 'rgba(148,163,184,0.04)';
+        const cellStyleHeader = `padding:10px; font-size:12px; color:var(--text-secondary); white-space:nowrap; vertical-align:middle; border-right:1px solid var(--border-light);`;
+
+        if (detalles.length === 0) {
+            rowsHtml += `
+            <tr style="border-top:${borderTop}; background:${bgRow};">
+                <td style="${cellStyleHeader} font-weight:600; color:var(--text-primary);" rowspan="1">${insp.fecha || '\u2014'}</td>
+                <td style="${cellStyleHeader}" rowspan="1">${insp.lugar_trabajo || '\u2014'}</td>
+                <td style="${cellStyleHeader}" rowspan="1">${insp.inspector_nombre || '\u2014'}</td>
+                <td colspan="4" style="padding:10px; font-size:12px; color:var(--text-muted); font-style:italic;">Sin extintores registrados</td>
+                <td rowspan="1" style="padding:10px; text-align:center; vertical-align:middle;">${getActionButtons(insp.id)}</td>
+            </tr>`;
+        } else {
+            detalles.forEach((det, detIdx) => {
+                const isFirst = detIdx === 0;
+                const cellStyleDet = `padding:8px 10px; font-size:12px; color:var(--text-secondary); white-space:nowrap; border-bottom:1px dashed var(--border-light);`;
+                rowsHtml += `
+                <tr style="${isFirst ? `border-top:${borderTop};` : ''} background:${bgRow};">
+                    ${isFirst ? `
+                    <td rowspan="${rowCount}" style="${cellStyleHeader} font-weight:600; color:var(--text-primary);">${insp.fecha || '\u2014'}</td>
+                    <td rowspan="${rowCount}" style="${cellStyleHeader}">${insp.lugar_trabajo || '\u2014'}</td>
+                    <td rowspan="${rowCount}" style="${cellStyleHeader}">${insp.inspector_nombre || '\u2014'}</td>
+                    ` : ''}
+                    <td style="${cellStyleDet} font-weight:600; color:var(--text-primary);">
+                        <span style="display:inline-flex;align-items:center;gap:6px;">
+                            <span style="font-size:10px;color:var(--text-muted);">#${detIdx + 1}</span>
+                            ${det.codigo || '\u2014'}
+                        </span>
+                    </td>
+                    <td style="${cellStyleDet}">${det.tipo || '\u2014'}</td>
+                    <td style="${cellStyleDet}">${det.capacidad || '\u2014'}</td>
+                    <td style="padding:8px 10px; border-bottom:1px dashed var(--border-light);">${getEstadosBadgesHtml(det)}</td>
+                    ${isFirst ? `
+                    <td rowspan="${rowCount}" style="padding:10px; text-align:center; vertical-align:middle; border-left:1px solid var(--border-light);">${getActionButtons(insp.id)}</td>
+                    ` : ''}
+                </tr>`;
+            });
+        }
+    });
+
+    const thStyle = 'padding:8px 10px; text-align:left; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-secondary); border-bottom:1px solid var(--border-default); white-space:nowrap;';
+
+    tableContainer.innerHTML = `
+        <div style="overflow-x:auto; border-radius:12px; border:1px solid var(--border-default); background:var(--bg-surface);">
+            <table style="width:100%; border-collapse:collapse; font-family:'Inter',sans-serif;">
+                <thead>
+                    <tr>
+                        <th style="${thStyle}">FECHA</th>
+                        <th style="${thStyle}">LUGAR DE TRABAJO</th>
+                        <th style="${thStyle}">INSPECTOR</th>
+                        <th style="${thStyle}">C\u00d3DIGO / #</th>
+                        <th style="${thStyle}">TIPO</th>
+                        <th style="${thStyle}">CAPACIDAD</th>
+                        <th style="${thStyle}">ESTADOS</th>
+                        <th style="${thStyle} text-align:center; width:110px;">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>${rowsHtml}</tbody>
+            </table>
+        </div>`;
+
+    if (window.lucide) window.lucide.createIcons({ nodes: [tableContainer] });
+
+    // Delegation for action buttons
+    tableContainer.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const action = btn.dataset.action;
+        const id = btn.dataset.id;
+        const insp = cachedInspecciones.find(r => r.id === id);
+        if (!insp) return;
+
+        if (action === 'view') {
+            await openRecordForEdit(container, id, true);
+        } else if (action === 'edit') {
+            await openRecordForEdit(container, id, false);
+        } else if (action === 'delete') {
+            const confirmed = await showConfirmModal('Eliminar', `\u00bfSeguro que desea eliminar la inspecci\u00f3n del ${insp.fecha}?`);
             if (confirmed) {
-                const delRes = await deleteInspeccion(record.id);
+                const delRes = await deleteInspeccion(id);
                 if (delRes.error) showToast('Error al eliminar', 'error');
                 else {
-                    showToast('Inspección eliminada', 'success');
+                    showToast('Inspecci\u00f3n eliminada', 'success');
                     await refreshTable(container, true);
                 }
             }
-        },
-        emptyMessage: 'No hay inspecciones guardadas.'
+        }
     });
 }
 
