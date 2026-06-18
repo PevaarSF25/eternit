@@ -625,7 +625,7 @@ async function refreshTable(container, force = false) {
             key: 'fecha', 
             label: 'Fecha', 
             sortable: true,
-            render: (val) => val ? new Date(val).toLocaleDateString() : 'N/A'
+            format: (val) => val ? new Date(val).toLocaleDateString() : 'N/A'
         },
         { key: 'lugar_trabajo', label: 'Lugar', sortable: true },
         { key: 'inspector_nombre', label: 'Inspector', sortable: true },
@@ -633,87 +633,50 @@ async function refreshTable(container, force = false) {
             key: 'total_arneses', 
             label: 'Arneses Insp.', 
             sortable: true,
-            render: (val) => `<span class="badge badge-primary">${val || 0}</span>`
-        },
-        {
-            key: 'acciones',
-            label: 'Acciones',
-            render: (val, row) => `
-                <div style="display:flex; gap:8px;">
-                    <button class="btn-icon btn-view" data-id="${row.id}" title="Ver Detalles"><i data-lucide="eye"></i></button>
-                    <button class="btn-icon btn-edit" data-id="${row.id}" title="Editar"><i data-lucide="edit-2"></i></button>
-                    <button class="btn-icon btn-delete" data-id="${row.id}" title="Eliminar"><i data-lucide="trash-2"></i></button>
-                </div>
-            `
+            format: (val) => `<span class="badge badge-primary">${val || 0}</span>`
         }
     ];
 
-    dataTableInstance = createDataTable(tableContainer, {
-        data: filteredData,
+    dataTableInstance = createDataTable({
+        containerId: 'table-container',
         columns: columns,
-        itemsPerPage: 10
-    });
-
-    if (window.lucide) window.lucide.createIcons();
-
-    // Events
-    tableContainer.querySelectorAll('.btn-view').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const id = e.currentTarget.dataset.id;
-            const record = filteredData.find(r => r.id === id);
-            if (record) {
-                currentRecordId = id;
-                container.querySelector('#input-lugar_trabajo').value = record.lugar_trabajo;
-                container.querySelector('#input-fecha').value = record.fecha;
-                container.querySelector('#input-inspector_nombre').value = record.inspector_nombre;
-                container.querySelector('#input-inspector_cargo').value = record.inspector_cargo;
-                container.querySelector('#input-observaciones_generales').value = record.observaciones_generales || '';
-                
-                renderDetallesForView(container, record);
-                setReadOnly(container, true);
-                container._showForm();
-            }
-        });
-    });
-
-    tableContainer.querySelectorAll('.btn-edit').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const id = e.currentTarget.dataset.id;
-            const record = filteredData.find(r => r.id === id);
-            if (record) {
-                currentRecordId = id;
-                container.querySelector('#input-lugar_trabajo').value = record.lugar_trabajo;
-                container.querySelector('#input-fecha').value = record.fecha;
-                container.querySelector('#input-inspector_nombre').value = record.inspector_nombre;
-                container.querySelector('#input-inspector_cargo').value = record.inspector_cargo;
-                container.querySelector('#input-observaciones_generales').value = record.observaciones_generales || '';
-                
-                renderDetallesForView(container, record);
-                setReadOnly(container, false);
-                container._showForm();
-            }
-        });
-    });
-
-    tableContainer.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const id = e.currentTarget.dataset.id;
-            showConfirmModal({
-                title: 'Eliminar Inspección',
-                message: '¿Estás seguro de que deseas eliminar este registro?',
-                confirmText: 'Eliminar',
-                cancelText: 'Cancelar',
-                type: 'danger',
-                onConfirm: async () => {
-                    const res = await deleteInspeccion(id);
-                    if (res.error) {
-                        showToast('Error al eliminar', 'error');
-                    } else {
-                        showToast('Inspección eliminada', 'success');
-                        await refreshTable(container, true);
-                    }
+        data: filteredData,
+        pageSize: 10,
+        onView: async (record) => {
+            currentRecordId = record.id;
+            container.querySelector('#input-lugar_trabajo').value = record.lugar_trabajo;
+            container.querySelector('#input-fecha').value = record.fecha;
+            container.querySelector('#input-inspector_nombre').value = record.inspector_nombre;
+            container.querySelector('#input-inspector_cargo').value = record.inspector_cargo;
+            container.querySelector('#input-observaciones_generales').value = record.observaciones_generales || '';
+            
+            renderDetallesForView(container, record);
+            setReadOnly(container, true);
+            container._showForm();
+        },
+        onEdit: async (record) => {
+            currentRecordId = record.id;
+            container.querySelector('#input-lugar_trabajo').value = record.lugar_trabajo;
+            container.querySelector('#input-fecha').value = record.fecha;
+            container.querySelector('#input-inspector_nombre').value = record.inspector_nombre;
+            container.querySelector('#input-inspector_cargo').value = record.inspector_cargo;
+            container.querySelector('#input-observaciones_generales').value = record.observaciones_generales || '';
+            
+            renderDetallesForView(container, record);
+            setReadOnly(container, false);
+            container._showForm();
+        },
+        onDelete: async (record) => {
+            const confirmed = await showConfirmModal('Eliminar Inspección', '¿Estás seguro de que deseas eliminar este registro?');
+            if (confirmed) {
+                const res = await deleteInspeccion(record.id);
+                if (res.error) {
+                    showToast('Error al eliminar', 'error');
+                } else {
+                    showToast('Inspección eliminada', 'success');
+                    await refreshTable(container, true);
                 }
-            });
-        });
+            }
+        }
     });
 }

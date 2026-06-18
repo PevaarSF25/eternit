@@ -423,7 +423,7 @@ async function refreshTable(container, force) {
         { key: 'talla', label: 'Talla', sortable: true },
         {
             key: 'estado', label: 'Estado', sortable: true,
-            render: function(val) {
+            format: function(val) {
                 var cls = 'badge-secondary';
                 if (val === 'Disponible') cls = 'badge-success';
                 else if (val === 'En uso') cls = 'badge-primary';
@@ -431,70 +431,40 @@ async function refreshTable(container, force) {
                 else if (val === 'Fuera de servicio' || val === 'Dado de baja') cls = 'badge-danger';
                 return '<span class="badge ' + cls + '">' + (val || 'N/A') + '</span>';
             }
-        },
-        {
-            key: 'acciones', label: 'Acciones',
-            render: function(val, row) {
-                return '<div style="display:flex; gap:8px;">'
-                    + '<button class="btn-icon btn-view" data-id="' + row.id + '" title="Ver"><i data-lucide="eye"></i></button>'
-                    + '<button class="btn-icon btn-edit" data-id="' + row.id + '" title="Editar"><i data-lucide="edit-2"></i></button>'
-                    + '<button class="btn-icon btn-delete" data-id="' + row.id + '" title="Eliminar"><i data-lucide="trash-2"></i></button>'
-                    + '</div>';
-            }
         }
     ];
 
-    dataTableInstance = createDataTable(tableContainer, { data: filteredData, columns: columns, itemsPerPage: 10 });
-    if (window.lucide) window.lucide.createIcons();
-
-    tableContainer.querySelectorAll('.btn-view').forEach(function(btn) {
-        btn.addEventListener('click', async function(e) {
-            var id = e.currentTarget.dataset.id;
-            var record = cachedInventario.find(function(r) { return r.id === id; });
-            if (record) {
-                currentRecordId = id;
-                setFormData(container, record);
-                setReadOnly(container, true);
-                await loadHistorial(container, record.codigo);
-                container._showForm();
-            }
-        });
-    });
-
-    tableContainer.querySelectorAll('.btn-edit').forEach(function(btn) {
-        btn.addEventListener('click', async function(e) {
-            var id = e.currentTarget.dataset.id;
-            var record = cachedInventario.find(function(r) { return r.id === id; });
-            if (record) {
-                currentRecordId = id;
-                setFormData(container, record);
-                setReadOnly(container, false);
-                await loadHistorial(container, record.codigo);
-                container._showForm();
-            }
-        });
-    });
-
-    tableContainer.querySelectorAll('.btn-delete').forEach(function(btn) {
-        btn.addEventListener('click', async function(e) {
-            var id = e.currentTarget.dataset.id;
-            showConfirmModal({
-                title: 'Eliminar Arnés',
-                message: 'Esta acción no se puede deshacer y borrará las inspecciones asociadas.',
-                confirmText: 'Eliminar',
-                cancelText: 'Cancelar',
-                type: 'danger',
-                onConfirm: async function() {
-                    var res = await deleteInventario(id);
-                    if (res.error) {
-                        showToast('Error al eliminar el arnés', 'error');
-                    } else {
-                        showToast('Arnés eliminado', 'success');
-                        await refreshTable(container, true);
-                    }
+    dataTableInstance = createDataTable({
+        containerId: 'table-container',
+        columns: columns,
+        data: filteredData,
+        pageSize: 10,
+        onView: async function(record) {
+            currentRecordId = record.id;
+            setFormData(container, record);
+            setReadOnly(container, true);
+            await loadHistorial(container, record.codigo);
+            container._showForm();
+        },
+        onEdit: async function(record) {
+            currentRecordId = record.id;
+            setFormData(container, record);
+            setReadOnly(container, false);
+            await loadHistorial(container, record.codigo);
+            container._showForm();
+        },
+        onDelete: async function(record) {
+            var confirmed = await showConfirmModal('Eliminar Arnés', 'Esta acción no se puede deshacer y borrará las inspecciones asociadas.');
+            if (confirmed) {
+                var res = await deleteInventario(record.id);
+                if (res.error) {
+                    showToast('Error al eliminar el arnés', 'error');
+                } else {
+                    showToast('Arnés eliminado', 'success');
+                    await refreshTable(container, true);
                 }
-            });
-        });
+            }
+        }
     });
 }
 
