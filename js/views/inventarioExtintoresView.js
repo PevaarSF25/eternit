@@ -84,6 +84,10 @@ export async function renderInventarioExtintores(container) {
                             <label for="input-ultima_recarga" class="form-label">Última Fecha de Recarga</label>
                             <input type="text" class="form-input" id="input-ultima_recarga" name="ultima_recarga" required readonly placeholder="Seleccione fecha...">
                         </div>
+                        <div class="form-group" id="group-proxima_recarga" style="display:none;">
+                            <label for="input-proxima_recarga" class="form-label">Fecha de próxima recarga</label>
+                            <input type="text" class="form-input" id="input-proxima_recarga" readonly style="background-color: var(--bg-surface); color: var(--text-primary); font-weight: 600; cursor: default;" placeholder="">
+                        </div>
                         <div class="form-group">
                             <label for="input-estado" class="form-label">Estado</label>
                             <select class="form-select" id="input-estado" name="estado" required>
@@ -227,6 +231,12 @@ function resetForm(container) {
     // Ocultar sección de historial
     const historySection = container.querySelector('#historial-inspecciones-section');
     if (historySection) historySection.style.display = 'none';
+
+    // Ocultar campo proxima_recarga al crear nuevo
+    const groupProxima = container.querySelector('#group-proxima_recarga');
+    if (groupProxima) groupProxima.style.display = 'none';
+    const proximaField = container.querySelector('#input-proxima_recarga');
+    if (proximaField) proximaField.value = '';
 
     // Ocultar badge de estado de recepción
     const estadoRecepcionContainer = container.querySelector('#estado-recepcion-form-badge');
@@ -435,6 +445,24 @@ function loadRecordIntoForm(container, record) {
     container.querySelector('#input-ubicacion').value = record.ubicacion || '';
     container.querySelector('#input-ultima_recarga').value = record.ultima_recarga || '';
     container.querySelector('#input-estado').value = record.estado || 'Activo';
+
+    // Mostrar y rellenar campo de próxima recarga (solo en modo ver/editar)
+    const groupProxima = container.querySelector('#group-proxima_recarga');
+    const proximaField = container.querySelector('#input-proxima_recarga');
+    if (groupProxima && proximaField) {
+        groupProxima.style.display = 'block';
+        if (record.vencimiento) {
+            proximaField.value = record.vencimiento;
+        } else if (record.ultima_recarga) {
+            try {
+                const d = new Date(record.ultima_recarga + 'T00:00:00');
+                d.setFullYear(d.getFullYear() + 1);
+                proximaField.value = d.toISOString().slice(0, 10);
+            } catch(e) { proximaField.value = '—'; }
+        } else {
+            proximaField.value = '—';
+        }
+    }
     
     // Mostrar badge de estado de recepción
     const estadoRecepcionContainer = container.querySelector('#estado-recepcion-form-badge');
@@ -498,108 +526,83 @@ async function loadExtintorHistory(container, numeroSerie) {
             { key: 'estado_sello_garantia', label: 'Sello de garantía', short: 'SG' }
         ];
 
-        const thStyle = "padding:10px 12px; text-align:left; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-secondary); border-bottom:1px solid var(--border-default); white-space:nowrap; background:rgba(148,163,184,0.02);";
-        const tdStyle = "padding:10px 12px; font-size:12px; color:var(--text-secondary); border-bottom:1px solid var(--border-light); vertical-align:middle;";
+        const thStyle = "padding:8px 10px; text-align:center; font-weight:700; font-size:10px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-secondary); border-bottom:1px solid var(--border-default); white-space:nowrap; background:rgba(148,163,184,0.02);";
+        const thLeftStyle = "padding:8px 12px; text-align:left; font-weight:700; font-size:10px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-secondary); border-bottom:1px solid var(--border-default); white-space:nowrap; background:rgba(148,163,184,0.02);";
+        const tdStyle = "padding:8px 10px; font-size:12px; color:var(--text-secondary); border-bottom:1px solid var(--border-light); vertical-align:middle; text-align:center;";
+        const tdLeftStyle = "padding:8px 12px; font-size:12px; color:var(--text-secondary); border-bottom:1px solid var(--border-light); vertical-align:middle;";
+
+        // Construir cabeceras dinámicas: Fecha | Inspector | Acción | AC | SE | ... | SG | Resumen
+        let headersHtml = `
+            <th style="${thLeftStyle}">Fecha Inspección</th>
+            <th style="${thLeftStyle}">Inspector</th>
+            <th style="${thStyle}">Ver</th>
+        `;
+        ELEMENTOS_CLAVES.forEach(el => {
+            headersHtml += `<th style="${thStyle}" title="${el.label}">${el.short}</th>`;
+        });
+        headersHtml += `<th style="${thStyle}">Resumen</th>`;
 
         let rowsHtml = '';
         history.forEach(item => {
             const insp = item.inspecciones_extintores || {};
             const fechaVal = insp.fecha || '—';
-            
-            // Próxima recarga: 1 year after item.fecha_recarga (or if missing, 1 year after insp.fecha)
-            const fechaRecarga = item.fecha_recarga || fechaVal;
-            let proximaRecargaVal = '—';
-            if (fechaRecarga && fechaRecarga !== '—') {
-                try {
-                    const date = new Date(fechaRecarga + 'T00:00:00');
-                    date.setFullYear(date.getFullYear() + 1);
-                    const yyyy = date.getFullYear();
-                    const mm = String(date.getMonth() + 1).padStart(2, '0');
-                    const dd = String(date.getDate()).padStart(2, '0');
-                    proximaRecargaVal = `${dd}/${mm}/${yyyy}`;
-                } catch (e) {
-                    console.error(e);
-                }
-            }
 
             const inspector = insp.inspector_nombre || 'Desconocido';
-            const cargo = insp.inspector_cargo ? ` (${insp.inspector_cargo})` : '';
-            const inspectorFull = `<strong>${inspector}</strong><span style="font-size:11px; color:var(--text-muted); display:block; margin-top:2px;">${cargo ? insp.inspector_cargo : ''}</span>`;
-            
-            const lugar = insp.lugar_trabajo || 'No especificado';
-            
-            const states = ELEMENTOS_CLAVES.map(el => item[el.key]).filter(Boolean);
+            const cargo = insp.inspector_cargo || '';
+            const inspectorFull = `<strong>${inspector}</strong>${cargo ? `<span style="font-size:10px; color:var(--text-muted); display:block; margin-top:1px;">${cargo}</span>` : ''}`;
+
+            const states = ELEMENTOS_CLAVES.map(el => item[el.key]);
             const bCount = states.filter(v => v === 'Buen estado').length;
             const mCount = states.filter(v => v === 'Mal estado').length;
             const nCount = states.filter(v => v === 'No aplica').length;
 
-            const isOperativo = mCount === 0;
-            const statusText = isOperativo ? 'Operativo' : 'Atención';
-            const statusBg = isOperativo ? 'var(--success-bg)' : 'var(--danger-bg)';
-            const statusColor = isOperativo ? 'var(--success)' : 'var(--danger)';
+            const observ = insp.observaciones_generales ? `<div style="font-size:10px; font-style:italic; color:var(--text-muted); margin-top:3px;"><strong style="color:var(--text-secondary);">Obs:</strong> ${insp.observaciones_generales}</div>` : '';
 
-            let badgesHtml = '<div style="display:flex; gap:3px; margin-top:4px;">';
-            if (bCount > 0) badgesHtml += `<span style="padding: 1px 4px; border-radius: 4px; background: #e0f2fe; color: #0369a1; font-weight: 600; font-size: 9px;">🟢 B: ${bCount}</span>`;
-            if (mCount > 0) badgesHtml += `<span style="padding: 1px 4px; border-radius: 4px; background: #fee2e2; color: #b91c1c; font-weight: 600; font-size: 9px;">🔴 M: ${mCount}</span>`;
-            if (nCount > 0) badgesHtml += `<span style="padding: 1px 4px; border-radius: 4px; background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; font-weight: 600; font-size: 9px;">⚪ N: ${nCount}</span>`;
-            badgesHtml += '</div>';
-
-            // Construir resumen visual abreviado de todos los elementos
-            let elementosResumenHtml = '<div style="display:flex; flex-wrap:wrap; gap:3px;">';
+            // Celdas de elementos
+            let elementCellsHtml = '';
             ELEMENTOS_CLAVES.forEach(el => {
                 const val = item[el.key] || '';
-                let style = '';
-                if (val === 'Buen estado') {
-                    style = 'background-color:#dcfce7; color:#166534; border:1px solid #bbf7d0;';
-                } else if (val === 'Mal estado') {
-                    style = 'background-color:#fee2e2; color:#991b1b; border:1px solid #fecaca; box-shadow: 0 0 2px rgba(239,68,68,0.3);';
-                } else if (val === 'No aplica') {
-                    style = 'background-color:#f3f4f6; color:#4b5563; border:1px solid #e5e7eb;';
-                } else {
-                    style = 'background-color:#fafafa; color:#a1a1aa; border:1px solid #e4e4e7;';
-                }
-                elementosResumenHtml += `<span title="${el.label}: ${val || 'Sin evaluar'}" style="display:inline-flex; align-items:center; justify-content:center; width:25px; height:20px; border-radius:4px; font-weight:700; font-size:8px; cursor:help; transition:transform 0.15s; ${style}" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">${el.short}</span>`;
+                let bg = '#fafafa', color = '#a1a1aa', border = '1px solid #e4e4e7';
+                if (val === 'Buen estado')      { bg = '#dcfce7'; color = '#166534'; border = '1px solid #bbf7d0'; }
+                else if (val === 'Mal estado')  { bg = '#fee2e2'; color = '#991b1b'; border = '1px solid #fecaca'; }
+                else if (val === 'No aplica')   { bg = '#f3f4f6'; color = '#6b7280'; border = '1px solid #e5e7eb'; }
+                elementCellsHtml += `
+                    <td style="${tdStyle}">
+                        <span title="${el.label}: ${val || 'Sin evaluar'}" style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:20px; border-radius:4px; font-weight:700; font-size:9px; cursor:help; transition:transform 0.15s; background:${bg}; color:${color}; border:${border};" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">${el.short}</span>
+                    </td>
+                `;
             });
-            elementosResumenHtml += '</div>';
 
-            const observ = insp.observaciones_generales ? `<p style="margin:4px 0 0 0; font-size:11px; font-style:italic; color:var(--text-muted);"><strong style="color:var(--text-secondary);">Obs:</strong> ${insp.observaciones_generales}</p>` : '';
+            // Resumen de conteos al extremo derecho
+            let resumenHtml = '<div style="display:flex; flex-direction:column; gap:3px; align-items:center; min-width:52px;">';
+            if (bCount > 0) resumenHtml += `<span style="padding:1px 5px; border-radius:4px; background:#e0f2fe; color:#0369a1; font-weight:700; font-size:9px; white-space:nowrap;">🟢 ${bCount}</span>`;
+            if (mCount > 0) resumenHtml += `<span style="padding:1px 5px; border-radius:4px; background:#fee2e2; color:#b91c1c; font-weight:700; font-size:9px; white-space:nowrap;">🔴 ${mCount}</span>`;
+            if (nCount > 0) resumenHtml += `<span style="padding:1px 5px; border-radius:4px; background:#f3f4f6; color:#4b5563; border:1px solid #e5e7eb; font-weight:700; font-size:9px; white-space:nowrap;">⚪ ${nCount}</span>`;
+            resumenHtml += '</div>';
 
             rowsHtml += `
                 <tr>
-                    <td style="${tdStyle}">
-                        <div style="font-weight:600; color:var(--text-primary);">${proximaRecargaVal}</div>
-                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Inspección: ${fechaVal}</div>
+                    <td style="${tdLeftStyle}">
+                        <div style="font-weight:600; color:var(--text-primary); font-size:12px;">${fechaVal}</div>
+                        ${observ}
                     </td>
-                    <td style="${tdStyle}">${inspectorFull}</td>
-                    <td style="${tdStyle}">${lugar}</td>
+                    <td style="${tdLeftStyle}">${inspectorFull}</td>
                     <td style="${tdStyle}">
-                        <div style="display:flex; flex-direction:column; gap:4px;">
-                            ${elementosResumenHtml}
-                            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:2px;">
-                                <span style="padding: 2px 6px; border-radius: 12px; font-size: 9px; font-weight: 700; text-transform: uppercase; background: ${statusBg}; color: ${statusColor};">${statusText}</span>
-                                ${badgesHtml}
-                            </div>
-                            ${observ}
-                        </div>
+                        <a href="#inspeccion-extintores" onclick="localStorage.setItem('view_inspeccion_id', '${item.inspeccion_id || ''}')" title="Ver Inspección" style="background:var(--accent-bg); border:1px solid var(--border-focus); border-radius:6px; padding:5px 7px; cursor:pointer; color:var(--accent); display:inline-flex; align-items:center;">
+                            <i data-lucide="eye" style="width:14px; height:14px;"></i>
+                        </a>
                     </td>
+                    ${elementCellsHtml}
+                    <td style="${tdStyle}">${resumenHtml}</td>
                 </tr>
             `;
         });
 
         const tableHtml = `
-            <div style="overflow-x:auto; border-radius:12px; border:1px solid var(--border-default); background:var(--bg-surface); margin-top: 16px;">
-                <table style="width:100%; border-collapse:collapse; text-align:left; font-family:'Inter',sans-serif;">
-                    <thead>
-                        <tr>
-                            <th style="${thStyle}">Próxima Recarga</th>
-                            <th style="${thStyle}">Inspector</th>
-                            <th style="${thStyle}">Lugar de Trabajo</th>
-                            <th style="${thStyle}">Detalle de Elementos</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rowsHtml}
-                    </tbody>
+            <div style="overflow-x:auto; border-radius:12px; border:1px solid var(--border-default); background:var(--bg-surface); margin-top:16px;">
+                <table style="width:100%; border-collapse:collapse; font-family:'Inter',sans-serif;">
+                    <thead><tr>${headersHtml}</tr></thead>
+                    <tbody>${rowsHtml}</tbody>
                 </table>
             </div>
         `;

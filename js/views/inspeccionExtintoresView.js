@@ -619,7 +619,7 @@ async function refreshTable(container, forceFetch = false) {
                         <th style="${thStyle}">C\u00d3DIGO / #</th>
                         <th style="${thStyle}">TIPO</th>
                         <th style="${thStyle}">CAPACIDAD</th>
-                        <th style="${thStyle}">ESTADOS R</th>
+                        <th style="${thStyle}">ESTADO RECARGA</th>
                         <th style="${thStyle} text-align:center; width:110px;">ACCIONES</th>
                     </tr>
                 </thead>

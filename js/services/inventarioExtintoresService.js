@@ -43,6 +43,9 @@ export async function getInventarioById(id) {
 
 export async function createInventario(datos) {
     try {
+        if (!datos.clase_fuego) {
+            datos.clase_fuego = 'N/A';
+        }
         const sb = getSupabase();
         const { data, error } = await sb
             .from('inventario_extintores')
@@ -64,6 +67,9 @@ export async function createInventario(datos) {
 
 export async function updateInventario(id, datos) {
     try {
+        if (!datos.clase_fuego) {
+            datos.clase_fuego = 'N/A';
+        }
         const sb = getSupabase();
         const { data, error } = await sb
             .from('inventario_extintores')
