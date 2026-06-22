@@ -71,29 +71,13 @@ export async function renderInventarioArneses(container) {
     + '<h3 class="form-section-title">Información Técnica</h3>'
     + '<div class="form-grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));">'
     + '<div class="form-group"><label for="input-norma_certificacion" class="form-label">Norma de Certificación</label>'
-    + '<select class="form-select" id="input-norma_certificacion" name="norma_certificacion">'
+    + '<select class="form-select" id="input-norma_certificacion" name="norma_certificacion" required>'
     + '<option value="" disabled selected>Seleccione...</option>'
-    + '<option value="ANSI">ANSI</option>'
-    + '<option value="OSHA">OSHA</option>'
-    + '<option value="EN 361">EN 361</option>'
-    + '<option value="EN 358">EN 358</option>'
-    + '<option value="EN 813">EN 813</option>'
-    + '<option value="Otra">Otra</option>'
     + '</select></div>'
-    + '<div class="form-group" id="group-norma-otra" style="display:none;"><label for="input-norma_certificacion_otra" class="form-label">Especifique Norma</label>'
-    + '<input type="text" class="form-input" id="input-norma_certificacion_otra" name="norma_certificacion_otra" placeholder="Escriba la norma..."></div>'
     + '<div class="form-group"><label for="input-capacidad_carga" class="form-label">Capacidad Máxima de Carga</label>'
     + '<input type="text" class="form-input" id="input-capacidad_carga" name="capacidad_carga" placeholder="Ej: 140 kg"></div>'
     + '<div class="form-group"><label for="input-numero_argollas" class="form-label">Número de Argollas</label>'
     + '<input type="number" class="form-input" id="input-numero_argollas" name="numero_argollas" min="0"></div>'
-    + '<div class="form-group"><label for="input-ubicacion_argollas" class="form-label">Ubicación de Argollas</label>'
-    + '<select class="form-select" id="input-ubicacion_argollas" name="ubicacion_argollas">'
-    + '<option value="" disabled selected>Seleccione...</option>'
-    + '<option value="Dorsal">Dorsal</option>'
-    + '<option value="Esternal">Esternal</option>'
-    + '<option value="Laterales de posicionamiento">Laterales de posicionamiento</option>'
-    + '<option value="Ventral">Ventral</option>'
-    + '</select></div>'
     + '<div class="form-group"><label for="input-talla" class="form-label">Talla</label>'
     + '<select class="form-select" id="input-talla" name="talla">'
     + '<option value="" disabled selected>Seleccione...</option>'
@@ -141,7 +125,7 @@ export async function renderInventarioArneses(container) {
     + '<div class="form-grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));">'
     + '<div class="form-group"><label for="input-fecha_ultima_inspeccion" class="form-label">Fecha Última Inspección</label>'
     + '<input type="text" class="form-input" id="input-fecha_ultima_inspeccion" name="fecha_ultima_inspeccion" readonly placeholder="Seleccione fecha..."></div>'
-    + '<div class="form-group"><label for="input-resultado_inspeccion" class="form-label">Resultado</label>'
+    + '<div class="form-group"><label for="input-resultado_inspeccion" class="form-label">Resultado Inspección</label>'
     + '<select class="form-select" id="input-resultado_inspeccion" name="resultado_inspeccion">'
     + '<option value="" disabled selected>Seleccione...</option>'
     + '<option value="Aprobado">Aprobado</option>'
@@ -206,6 +190,19 @@ async function loadParametricas(container) {
             selectTipo.innerHTML = '<option value="" disabled selected>Seleccione...</option>';
         }
     }
+
+    const normas = await getParametros('arnes_norma');
+    const selectNorma = container.querySelector('#input-norma_certificacion');
+    if (selectNorma) {
+        if (normas.data && normas.data.length > 0) {
+            selectNorma.innerHTML = '<option value="" disabled selected>Seleccione...</option>'
+                + normas.data.map(function(p) {
+                    return '<option value="' + p.valor + '">' + p.valor + '</option>';
+                }).join('');
+        } else {
+            selectNorma.innerHTML = '<option value="" disabled selected>Seleccione...</option>';
+        }
+    }
 }
 
 function bindEvents(container) {
@@ -218,7 +215,6 @@ function bindEvents(container) {
     var tableSearchInput = container.querySelector('#table-search-input');
     var tableSearchWrapper = container.querySelector('#table-search-wrapper');
     var selectNorma = container.querySelector('#input-norma_certificacion');
-    var groupNormaOtra = container.querySelector('#group-norma-otra');
 
     var showForm = function() {
         viewTable.style.display = 'none';
@@ -245,11 +241,7 @@ function bindEvents(container) {
         });
     }
 
-    if (selectNorma) {
-        selectNorma.addEventListener('change', function() {
-            groupNormaOtra.style.display = selectNorma.value === 'Otra' ? 'block' : 'none';
-        });
-    }
+    // No specific listener needed for norma
 
     btnNuevoRegistro.addEventListener('click', function() {
         resetForm(container);
@@ -268,11 +260,6 @@ function bindEvents(container) {
 }
 
 function getFormData(container) {
-    var normaVal = container.querySelector('#input-norma_certificacion').value;
-    var finalNorma = normaVal === 'Otra'
-        ? (container.querySelector('#input-norma_certificacion_otra').value || 'Otra')
-        : normaVal;
-
     var codigoActual = container.querySelector('#input-codigo').value;
     if (!codigoActual) {
         codigoActual = 'ARN-' + Date.now().toString(36).toUpperCase();
@@ -286,10 +273,9 @@ function getFormData(container) {
         lote: container.querySelector('#input-lote').value || null,
         pais_fabricacion: container.querySelector('#input-pais_fabricacion').value || null,
         tipo_equipo: container.querySelector('#input-tipo_equipo').value || 'Arnes de cuerpo completo',
-        norma_certificacion: finalNorma || null,
+        norma_certificacion: container.querySelector('#input-norma_certificacion').value || null,
         capacidad_carga: container.querySelector('#input-capacidad_carga').value || null,
         numero_argollas: container.querySelector('#input-numero_argollas').value || null,
-        ubicacion_argollas: container.querySelector('#input-ubicacion_argollas').value || null,
         talla: container.querySelector('#input-talla').value || null,
         fecha_compra: container.querySelector('#input-fecha_compra').value || null,
         proveedor: container.querySelector('#input-proveedor').value || null,
@@ -310,30 +296,9 @@ function setFormData(container, data) {
     container.querySelector('#input-lote').value = data.lote || '';
     container.querySelector('#input-pais_fabricacion').value = data.pais_fabricacion || '';
     container.querySelector('#input-tipo_equipo').value = data.tipo_equipo || 'Arnes de cuerpo completo';
-
-    var normaSelect = container.querySelector('#input-norma_certificacion');
-    var normaOtraGroup = container.querySelector('#group-norma-otra');
-    var normaOtraInput = container.querySelector('#input-norma_certificacion_otra');
-    var standardOptions = ['ANSI', 'OSHA', 'EN 361', 'EN 358', 'EN 813', 'Otra'];
-
-    if (data.norma_certificacion) {
-        if (standardOptions.includes(data.norma_certificacion)) {
-            normaSelect.value = data.norma_certificacion;
-            normaOtraGroup.style.display = 'none';
-        } else {
-            normaSelect.value = 'Otra';
-            normaOtraInput.value = data.norma_certificacion;
-            normaOtraGroup.style.display = 'block';
-        }
-    } else {
-        normaSelect.value = '';
-        normaOtraGroup.style.display = 'none';
-        normaOtraInput.value = '';
-    }
-
+    container.querySelector('#input-norma_certificacion').value = data.norma_certificacion || '';
     container.querySelector('#input-capacidad_carga').value = data.capacidad_carga || '';
     container.querySelector('#input-numero_argollas').value = data.numero_argollas || '';
-    container.querySelector('#input-ubicacion_argollas').value = data.ubicacion_argollas || '';
     container.querySelector('#input-talla').value = data.talla || '';
     container.querySelector('#input-fecha_compra').value = data.fecha_compra || '';
     container.querySelector('#input-proveedor').value = data.proveedor || '';
@@ -351,7 +316,6 @@ function resetForm(container) {
     container.querySelector('#input-codigo').value = '';
     container.querySelector('#input-tipo_equipo').value = 'Arnes de cuerpo completo';
     container.querySelector('#input-estado').value = 'Disponible';
-    container.querySelector('#group-norma-otra').style.display = 'none';
     container.querySelector('#btn-guardar').innerHTML = '<i data-lucide="save"></i> Guardar Arnés';
     container.querySelector('#historial-inspecciones-section').style.display = 'none';
     if (window.lucide) window.lucide.createIcons();
@@ -419,10 +383,12 @@ async function refreshTable(container, force) {
 
     var columns = [
         { key: 'numero_inventario', label: 'N° Inventario', sortable: true },
+        { key: 'tipo_equipo', label: 'Tipo de Equipo', sortable: true },
         { key: 'marca', label: 'Marca', sortable: true },
+        { key: 'fabricante', label: 'Fabricante', sortable: true },
         { key: 'talla', label: 'Talla', sortable: true },
         {
-            key: 'estado', label: 'Estado', sortable: true,
+            key: 'estado', label: 'Estado Arneses', sortable: true,
             format: function(val) {
                 var cls = 'badge-secondary';
                 if (val === 'Disponible') cls = 'badge-success';
@@ -477,28 +443,190 @@ async function loadHistorial(container, codigoArnes) {
     historialContainer.innerHTML = '<div style="text-align:center; padding:10px;"><div class="spinner" style="width:20px;height:20px;"></div></div>';
     historialSection.style.display = 'block';
 
-    var result = await getArnesInspectionsHistory(codigoArnes);
-    if (result.error) {
-        historialContainer.innerHTML = '<div style="color:var(--danger); padding:10px;">Error al cargar el historial.</div>';
-        return;
-    }
-    if (!result.data || result.data.length === 0) {
-        historialContainer.innerHTML = '<div style="color:var(--text-secondary); padding:10px; font-style:italic;">No hay inspecciones registradas para este arnés.</div>';
-        return;
-    }
+    try {
+        var result = await getArnesInspectionsHistory(codigoArnes);
+        if (result.error) {
+            historialContainer.innerHTML = '<div style="color:var(--danger); padding:10px; text-align:center;">Error al cargar el historial.</div>';
+            return;
+        }
 
-    var html = result.data.map(function(item) {
-        var insp = item.inspecciones_arneses;
-        if (!insp) return '';
-        var fechaFormat = insp.fecha ? new Date(insp.fecha).toLocaleDateString() : 'Sin fecha';
-        return '<div style="border-bottom: 1px solid var(--border-light); padding: 12px 0;">'
-            + '<div style="display:flex; justify-content:space-between; margin-bottom:4px;">'
-            + '<strong>' + fechaFormat + ' - ' + (insp.lugar_trabajo || 'Sin ubicación') + '</strong>'
-            + '<span class="badge badge-secondary" style="font-size:10px;">Inspector: ' + (insp.inspector_nombre || '-') + '</span>'
-            + '</div>'
-            + (insp.observaciones_generales ? '<div style="font-size:12px; color:var(--text-secondary); margin-top:4px;"><strong>Obs:</strong> ' + insp.observaciones_generales + '</div>' : '')
-            + '</div>';
-    }).join('');
+        var history = result.data || [];
+        if (history.length === 0) {
+            historialContainer.innerHTML = `
+                <div style="text-align:center; padding:32px 16px; color:var(--text-muted); font-size:13px; border-radius:8px; border:1px dashed var(--border-default); background:rgba(148,163,184,0.02);">
+                    <i data-lucide="info" style="width:24px; height:24px; margin-bottom:8px; opacity:0.5; display:block; margin-left:auto; margin-right:auto;"></i>
+                    <p style="margin:0;">No se registran inspecciones previas para este arnés.</p>
+                </div>`;
+            if (window.lucide) window.lucide.createIcons({ nodes: [historialContainer] });
+            return;
+        }
 
-    historialContainer.innerHTML = html;
+        var CATEGORIAS_EVALUACION = [
+            {
+                key: 'cintas',
+                label: 'Cintas y Correas',
+                short: 'CC',
+                fields: [
+                    'cintas_cortes', 'cintas_rasgaduras', 'cintas_deshilachados', 'cintas_quemaduras',
+                    'cintas_deformaciones', 'cintas_abrasion', 'cintas_costuras_sueltas',
+                    'cintas_costuras_rotas', 'cintas_dano_quimico', 'cintas_endurecimiento',
+                    'cintas_decoloracion_uv', 'cintas_contaminantes'
+                ]
+            },
+            {
+                key: 'costuras',
+                label: 'Costuras',
+                short: 'CO',
+                fields: [
+                    'costuras_hilos_rotos', 'costuras_hilos_sueltos', 'costuras_incompletas',
+                    'costuras_desgaste', 'costuras_alteraciones'
+                ]
+            },
+            {
+                key: 'hebillas',
+                label: 'Hebillas y Ajustes',
+                short: 'HA',
+                fields: [
+                    'hebillas_funcionamiento', 'hebillas_corrosion', 'hebillas_grietas',
+                    'hebillas_deformaciones', 'hebillas_desgaste', 'hebillas_cierre', 'hebillas_bloqueo'
+                ]
+            },
+            {
+                key: 'argollas',
+                label: 'Argollas (D-Rings)',
+                short: 'AR',
+                fields: [
+                    'argollas_corrosion', 'argollas_fisuras', 'argollas_impactos',
+                    'argollas_deformaciones', 'argollas_bordes_afilados', 'argollas_movimiento',
+                    'argollas_desgaste'
+                ]
+            },
+            {
+                key: 'etiquetas',
+                label: 'Etiquetas y Marcación',
+                short: 'EM',
+                fields: [
+                    'etiquetas_legible', 'etiquetas_serie', 'etiquetas_fabricacion',
+                    'etiquetas_certificaciones', 'etiquetas_advertencias'
+                ]
+            },
+            {
+                key: 'caida',
+                label: 'Evidencia de Caída',
+                short: 'EC',
+                fields: [
+                    'caida_indicador', 'caida_danos', 'caida_historial'
+                ]
+            },
+            {
+                key: 'general',
+                label: 'Estado General',
+                short: 'EG',
+                fields: [
+                    'general_limpieza', 'general_modificaciones', 'general_accesorios',
+                    'general_almacenamiento', 'general_compatibilidad'
+                ]
+            }
+        ];
+
+        var thStyle = "padding:8px 10px; text-align:center; font-weight:700; font-size:10px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-secondary); border-bottom:1px solid var(--border-default); white-space:nowrap; background:rgba(148,163,184,0.02);";
+        var thLeftStyle = "padding:8px 12px; text-align:left; font-weight:700; font-size:10px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-secondary); border-bottom:1px solid var(--border-default); white-space:nowrap; background:rgba(148,163,184,0.02);";
+        var tdStyle = "padding:8px 10px; font-size:12px; color:var(--text-secondary); border-bottom:1px solid var(--border-light); vertical-align:middle; text-align:center;";
+        var tdLeftStyle = "padding:8px 12px; font-size:12px; color:var(--text-secondary); border-bottom:1px solid var(--border-light); vertical-align:middle;";
+
+        var headersHtml = `
+            <th style="${thLeftStyle}">Fecha Inspección</th>
+            <th style="${thLeftStyle}">Inspector</th>
+            <th style="${thStyle}">Ver</th>
+        `;
+        CATEGORIAS_EVALUACION.forEach(function(cat) {
+            headersHtml += `<th style="${thStyle}" title="${cat.label}">${cat.short}</th>`;
+        });
+        headersHtml += `<th style="${thStyle}">Resumen</th>`;
+
+        var rowsHtml = '';
+        history.forEach(function(item) {
+            var insp = item.inspecciones_arneses || {};
+            var fechaVal = insp.fecha || '—';
+            var inspector = insp.inspector_nombre || 'Desconocido';
+            var cargo = insp.inspector_cargo || '';
+            var inspectorFull = '<strong>' + inspector + '</strong>' + (cargo ? '<span style="font-size:10px; color:var(--text-muted); display:block; margin-top:1px;">' + cargo + '</span>' : '');
+
+            var bCount = 0;
+            var mCount = 0;
+            var nCount = 0;
+
+            var elementCellsHtml = '';
+            CATEGORIAS_EVALUACION.forEach(function(cat) {
+                var isNa = item[cat.key + '_no_aplica'] === 'true' || item[cat.key + '_no_aplica'] === true;
+                var isMal = !isNa && cat.fields.some(function(f) { return item[f] === 'Mal estado'; });
+                
+                var valLabel = 'Buen estado';
+                var bg = '#dcfce7', color = '#166534', border = '1px solid #bbf7d0';
+
+                if (isNa) {
+                    valLabel = 'No aplica';
+                    bg = '#f3f4f6';
+                    color = '#6b7280';
+                    border = '1px solid #e5e7eb';
+                    nCount++;
+                } else if (isMal) {
+                    valLabel = 'Mal estado';
+                    bg = '#fee2e2';
+                    color = '#991b1b';
+                    border = '1px solid #fecaca';
+                    mCount++;
+                } else {
+                    bCount++;
+                }
+
+                elementCellsHtml += `
+                    <td style="${tdStyle}">
+                        <span title="${cat.label}: ${valLabel}" style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:20px; border-radius:4px; font-weight:700; font-size:9px; cursor:help; transition:transform 0.15s; background:${bg}; color:${color}; border:${border};" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">${cat.short}</span>
+                    </td>
+                `;
+            });
+
+            var resumenHtml = '<div style="display:flex; flex-direction:column; gap:3px; align-items:center; min-width:52px;">';
+            if (bCount > 0) resumenHtml += `<span style="padding:1px 5px; border-radius:4px; background:#e0f2fe; color:#0369a1; font-weight:700; font-size:9px; white-space:nowrap;">🟢 ${bCount}</span>`;
+            if (mCount > 0) resumenHtml += `<span style="padding:1px 5px; border-radius:4px; background:#fee2e2; color:#b91c1c; font-weight:700; font-size:9px; white-space:nowrap;">🔴 ${mCount}</span>`;
+            if (nCount > 0) resumenHtml += `<span style="padding:1px 5px; border-radius:4px; background:#f3f4f6; color:#4b5563; border:1px solid #e5e7eb; font-weight:700; font-size:9px; white-space:nowrap;">⚪ ${nCount}</span>`;
+            resumenHtml += '</div>';
+
+            var observ = insp.observaciones_generales ? '<div style="font-size:10px; font-style:italic; color:var(--text-muted); margin-top:3px;"><strong style="color:var(--text-secondary);">Obs:</strong> ' + insp.observaciones_generales + '</div>' : '';
+
+            rowsHtml += `
+                <tr>
+                    <td style="${tdLeftStyle}">
+                        <div style="font-weight:600; color:var(--text-primary); font-size:12px;">${fechaVal}</div>
+                        ${observ}
+                    </td>
+                    <td style="${tdLeftStyle}">${inspectorFull}</td>
+                    <td style="${tdStyle}">
+                        <a href="#inspeccion-arneses" onclick="localStorage.setItem('view_inspeccion_id', '${item.inspeccion_id || ''}')" title="Ver Inspección" style="background:var(--accent-bg); border:1px solid var(--border-focus); border-radius:6px; padding:5px 7px; cursor:pointer; color:var(--accent); display:inline-flex; align-items:center;">
+                            <i data-lucide="eye" style="width:14px; height:14px;"></i>
+                        </a>
+                    </td>
+                    ${elementCellsHtml}
+                    <td style="${tdStyle}">${resumenHtml}</td>
+                </tr>
+            `;
+        });
+
+        var tableHtml = `
+            <div style="overflow-x:auto; border-radius:12px; border:1px solid var(--border-default); background:var(--bg-surface); margin-top:16px;">
+                <table style="width:100%; border-collapse:collapse; font-family:'Inter',sans-serif;">
+                    <thead><tr>${headersHtml}</tr></thead>
+                    <tbody>${rowsHtml}</tbody>
+                </table>
+            </div>
+        `;
+
+        historialContainer.innerHTML = tableHtml;
+        if (window.lucide) window.lucide.createIcons({ nodes: [historialContainer] });
+
+    } catch (err) {
+        console.error(err);
+        historialContainer.innerHTML = '<div style="color:var(--danger); padding:10px; text-align:center;">Error inesperado al cargar el historial.</div>';
+    }
 }

@@ -13,7 +13,7 @@ import { getSupabase } from '../db/supabaseClient.js';
 const TABLA = 'parametros';
 
 /** Categorías válidas */
-const CATEGORIAS_VALIDAS = ['ciudad', 'empresa', 'extintor_codigo', 'extintor_ubicacion', 'arnes_tipo'];
+const CATEGORIAS_VALIDAS = ['ciudad', 'empresa', 'extintor_codigo', 'extintor_ubicacion', 'arnes_tipo', 'arnes_norma'];
 
 // ─────────────────────────────────────────────────────────
 //  Validación interna

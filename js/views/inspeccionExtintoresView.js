@@ -144,6 +144,14 @@ export async function renderInspeccionExtintores(container) {
     bindEvents(container);
     await refreshTable(container);
     resetForm(container);
+
+    const viewInspeccionId = localStorage.getItem('view_inspeccion_id');
+    if (viewInspeccionId) {
+        localStorage.removeItem('view_inspeccion_id');
+        setTimeout(async () => {
+            await openRecordForEdit(container, viewInspeccionId, true);
+        }, 100);
+    }
 }
 
 async function loadParametricas(container) {
