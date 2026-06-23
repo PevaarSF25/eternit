@@ -1,7 +1,4 @@
-/**
- * Header Component
- * Renders the fixed top header with breadcrumb, live clock, and app badge.
- */
+import { logout } from '../auth.js';
 
 const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MESES_NOMBRE = [
@@ -11,24 +8,22 @@ const MESES_NOMBRE = [
 
 let clockInterval = null;
 
-/**
- * Initializes the header and renders it into the #header container.
- */
-export function initHeader() {
+export function initHeader(session = {}) {
     const header = document.getElementById('header');
     if (!header) {
         console.error('Header: #header container not found');
         return;
     }
 
-    renderHeader(header);
+    renderHeader(header, session);
     startClock();
 }
 
-/**
- * Renders the header HTML.
- */
-function renderHeader(header) {
+function renderHeader(header, session = {}) {
+    const nombre  = session.nombre || 'Super Admin';
+    const nivel   = session.nivel  || 'HSE Manager';
+    const initials = nombre.split(' ').map(w => w[0] || '').join('').substring(0, 2).toUpperCase() || 'SA';
+
     header.innerHTML = `
         <div class="header-inner" style="
             display: flex;
@@ -64,40 +59,36 @@ function renderHeader(header) {
 
                 <div class="header-divider"></div>
 
-                <!-- Action Controls -->
-                <div class="header-actions">
-                    <button class="header-action-btn notification-btn" title="Notificaciones">
-                        <i data-lucide="bell"></i>
-                        <span class="notification-indicator"></span>
-                    </button>
-                    <button class="header-action-btn settings-btn" title="Configuraciones Rápidas">
-                        <i data-lucide="sliders"></i>
-                    </button>
-                </div>
+                <!-- Logout button -->
+                <button id="header-logout-btn" class="header-action-btn" title="Cerrar sesión" style="color:var(--color-danger,#ef4444);">
+                    <i data-lucide="log-out"></i>
+                </button>
 
                 <div class="header-divider"></div>
 
-                <!-- Premium User Profile -->
+                <!-- User Profile -->
                 <div class="header-user-profile">
                     <div class="avatar-wrapper">
                         <div class="avatar-ring"></div>
-                        <div class="avatar-img">SA</div>
+                        <div class="avatar-img">${initials}</div>
                         <span class="user-status-dot"></span>
                     </div>
                     <div class="user-meta">
-                        <span class="user-name">Super Admin</span>
-                        <span class="user-role">HSE Coordinator</span>
+                        <span class="user-name">${nombre}</span>
+                        <span class="user-role">${nivel}</span>
                     </div>
-                    <i data-lucide="chevron-down" class="user-menu-chevron"></i>
                 </div>
             </div>
         </div>
     `;
 
-    // Render lucide icons
     if (typeof lucide !== 'undefined') {
         lucide.createIcons({ nodes: [header] });
     }
+
+    header.querySelector('#header-logout-btn').addEventListener('click', () => {
+        if (confirm('¿Cerrar sesión?')) logout();
+    });
 }
 
 /**

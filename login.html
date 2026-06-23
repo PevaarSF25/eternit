@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eternit HSE — Iniciar sesión</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+
+    <div class="login-wrapper">
+
+        <!-- LEFT PANEL — brand / logo -->
+        <div class="login-left">
+            <img src="assets/img/logo-eternit-white.png" alt="Eternit" class="login-logo-img">
+            <div class="login-left-footer">
+                <span class="login-left-badge">HSE Manager</span>
+                <p class="login-left-desc">Sistema de Gestión de Seguridad y Salud en el Trabajo</p>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL — form -->
+        <div class="login-right">
+            <div class="login-card">
+
+                <div class="login-card-header">
+                    <h2 class="login-title">Bienvenido</h2>
+                    <p class="login-subtitle">Ingresa tus credenciales para acceder al sistema</p>
+                </div>
+
+                <form id="login-form" novalidate autocomplete="off">
+
+                    <div class="login-field">
+                        <label class="login-label" for="login-email">Correo electrónico</label>
+                        <div class="login-input-wrapper">
+                            <i data-lucide="mail" class="login-input-icon"></i>
+                            <input type="email" id="login-email" class="login-input"
+                                   placeholder="correo@empresa.com" required autocomplete="username">
+                        </div>
+                    </div>
+
+                    <div class="login-field">
+                        <label class="login-label" for="login-password">Contraseña</label>
+                        <div class="login-input-wrapper">
+                            <i data-lucide="lock" class="login-input-icon"></i>
+                            <input type="password" id="login-password" class="login-input"
+                                   placeholder="••••••••••" required autocomplete="current-password">
+                            <button type="button" id="toggle-password" class="login-toggle-pwd" tabindex="-1">
+                                <i data-lucide="eye" id="pwd-eye-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="login-error" class="login-error" style="display:none;"></div>
+
+                    <button type="submit" class="login-btn" id="login-btn">
+                        <span id="login-btn-text">Ingresar</span>
+                        <div class="login-btn-spinner" id="login-spinner" style="display:none;"></div>
+                        <i data-lucide="arrow-right" id="login-arrow" style="width:18px;height:18px;"></i>
+                    </button>
+
+                </form>
+
+                <p class="login-footer-text">Eternit HSE Manager &copy; 2025 — Todos los derechos reservados</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module" src="js/loginPage.js"></script>
+</body>
+</html>

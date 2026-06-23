@@ -1,5 +1,6 @@
 import { initSidebar, updateActiveNav } from './components/sidebar.js';
 import { initHeader, updateHeader } from './components/header.js';
+import { requireAuth } from './auth.js';
 
 // Lazy loading the views to avoid circular dependencies and speed up initial load
 const routes = {
@@ -95,8 +96,11 @@ async function navigateTo(hash) {
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
+  const session = requireAuth();
+  if (!session) return;
+
   initSidebar();
-  initHeader();
+  initHeader(session);
   
   // Handle navigation events
   window.addEventListener('hashchange', () => {

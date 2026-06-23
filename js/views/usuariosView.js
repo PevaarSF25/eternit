@@ -1,6 +1,6 @@
 import { showToast } from '../components/toast.js';
 import { showConfirmModal } from '../components/modal.js';
-import { getUsuarios, createUsuario, updateUsuario, deleteUsuario } from '../services/userService.js';
+import { getUsuarios, createUsuario, updateUsuario, deleteUsuario, changePassword } from '../services/userService.js';
 import { getNivelesAcceso } from '../services/accessLevelService.js';
 
 let state = {
@@ -89,6 +89,7 @@ export async function renderUsuarios(container) {
                                 <option value="inactivo">Inactivo</option>
                             </select>
                         </div>
+                        <!-- CREATE: default password -->
                         <div id="password-section" class="form-group" style="background:var(--bg-hover);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:var(--space-4);">
                             <label class="form-label" style="margin-bottom:var(--space-2);">Contraseña por defecto</label>
                             <div style="display:flex;gap:var(--space-2);align-items:center;">
@@ -101,8 +102,25 @@ export async function renderUsuarios(container) {
                                 </button>
                             </div>
                             <p style="font-size:var(--text-xs);color:var(--text-muted);margin-top:var(--space-2);">
-                                Esta contraseña se enviará al correo del usuario al crear la cuenta.
+                                Comparte esta contraseña con el usuario para que pueda ingresar al sistema.
                             </p>
+                        </div>
+
+                        <!-- EDIT: change password -->
+                        <div id="change-pwd-section" style="display:none;">
+                            <div style="border-top:1px solid var(--border-default);margin-bottom:var(--space-4);"></div>
+                            <div class="form-group" style="margin-bottom:var(--space-2);">
+                                <label class="form-label">Nueva contraseña (dejar en blanco para no cambiar)</label>
+                                <div style="display:flex;gap:var(--space-2);align-items:center;">
+                                    <input type="text" class="form-input" id="u-nueva-pwd" placeholder="Nueva contraseña..." style="flex:1;font-family:var(--font-mono);">
+                                    <button type="button" class="btn btn-secondary" id="btn-generar-nueva-pwd" style="flex-shrink:0;" title="Generar contraseña">
+                                        <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" id="btn-copiar-nueva-pwd" style="flex-shrink:0;" title="Copiar">
+                                        <i data-lucide="copy" style="width:14px;height:14px;"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -143,9 +161,11 @@ export async function renderUsuarios(container) {
     const inputCorreo = container.querySelector('#u-correo');
     const selectNivel = container.querySelector('#u-nivel');
     const selectEstado = container.querySelector('#u-estado');
-    const inputPassword = container.querySelector('#u-password');
-    const passwordSection = container.querySelector('#password-section');
-    const btnSave = container.querySelector('#btn-save-usuario');
+    const inputPassword    = container.querySelector('#u-password');
+    const passwordSection  = container.querySelector('#password-section');
+    const changePwdSection = container.querySelector('#change-pwd-section');
+    const inputNuevaPwd    = container.querySelector('#u-nueva-pwd');
+    const btnSave          = container.querySelector('#btn-save-usuario');
 
     // Load data in parallel
     const [usersResult, nivelesResult] = await Promise.all([getUsuarios(), getNivelesAcceso()]);
@@ -264,11 +284,14 @@ export async function renderUsuarios(container) {
             selectNivel.value = item.nivel_acceso_id || '';
             selectEstado.value = item.estado || 'activo';
             passwordSection.style.display = 'none';
+            changePwdSection.style.display = 'block';
+            if (inputNuevaPwd) inputNuevaPwd.value = '';
             btnSave.disabled = false;
         } else {
             modalTitle.textContent = 'Nuevo usuario';
             btnSave.textContent = 'Crear usuario';
             passwordSection.style.display = 'block';
+            changePwdSection.style.display = 'none';
             inputPassword.value = generarPasswordAleatoria();
         }
 
@@ -323,9 +346,18 @@ export async function renderUsuarios(container) {
                 if (error) { showToast(`Error: ${error.message}`, 'error'); return; }
                 const idx = state.items.findIndex(i => i.id === state.editingItem.id);
                 if (idx !== -1 && data) state.items[idx] = data;
-                showToast('Usuario actualizado correctamente', 'success');
+
+                // Change password if entered
+                const nuevaPwd = inputNuevaPwd?.value?.trim();
+                if (nuevaPwd) {
+                    const { error: pwdErr } = await changePassword(state.editingItem.id, nuevaPwd);
+                    if (pwdErr) showToast(`Advertencia: no se pudo cambiar la contraseña: ${pwdErr.message}`, 'warning');
+                    else showToast('Usuario y contraseña actualizados', 'success');
+                } else {
+                    showToast('Usuario actualizado correctamente', 'success');
+                }
             } else {
-                const { data, error } = await createUsuario(payload);
+                const { data, error } = await createUsuario({ ...payload, password: inputPassword.value || undefined });
                 if (error) { showToast(`Error: ${error.message}`, 'error'); return; }
                 if (data) state.items.push(data);
                 showToast('Usuario creado correctamente', 'success');
@@ -338,7 +370,7 @@ export async function renderUsuarios(container) {
         }
     }
 
-    // Password generation/copy
+    // Password generation/copy (create mode)
     container.querySelector('#btn-generar-pwd').addEventListener('click', () => {
         inputPassword.value = generarPasswordAleatoria();
     });
@@ -348,6 +380,22 @@ export async function renderUsuarios(container) {
         try {
             await navigator.clipboard.writeText(inputPassword.value);
             showToast('Contraseña copiada al portapapeles', 'success');
+        } catch {
+            showToast('No se pudo copiar. Cópiala manualmente.', 'warning');
+        }
+    });
+
+    // Password generation/copy (edit mode)
+    container.querySelector('#btn-generar-nueva-pwd')?.addEventListener('click', () => {
+        if (inputNuevaPwd) inputNuevaPwd.value = generarPasswordAleatoria();
+    });
+
+    container.querySelector('#btn-copiar-nueva-pwd')?.addEventListener('click', async () => {
+        const val = inputNuevaPwd?.value;
+        if (!val) return;
+        try {
+            await navigator.clipboard.writeText(val);
+            showToast('Nueva contraseña copiada', 'success');
         } catch {
             showToast('No se pudo copiar. Cópiala manualmente.', 'warning');
         }

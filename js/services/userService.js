@@ -1,4 +1,5 @@
 import { getSupabase } from '../db/supabaseClient.js';
+import { sha256 } from '../auth.js';
 
 const TABLA = 'usuarios';
 
@@ -36,10 +37,12 @@ export async function getUsuarioById(id) {
     }
 }
 
-export async function createUsuario({ nombre, documento, correo, nivel_acceso_id, estado = 'activo' }) {
+export async function createUsuario({ nombre, documento, correo, nivel_acceso_id, estado = 'activo', password }) {
     try {
         if (!nombre?.trim()) return { data: null, error: new Error('El nombre es obligatorio.') };
         if (!correo?.trim()) return { data: null, error: new Error('El correo es obligatorio.') };
+
+        const contrasena_hash = password ? await sha256(password) : null;
 
         const sb = getSupabase();
         const { data, error } = await sb
@@ -49,7 +52,8 @@ export async function createUsuario({ nombre, documento, correo, nivel_acceso_id
                 documento: documento?.trim() || null,
                 correo: correo.trim().toLowerCase(),
                 nivel_acceso_id: nivel_acceso_id || null,
-                estado
+                estado,
+                ...(contrasena_hash ? { contrasena_hash } : {})
             })
             .select(`*, niveles_acceso (id, nombre)`)
             .single();
@@ -81,6 +85,24 @@ export async function updateUsuario(id, { nombre, documento, correo, nivel_acces
             .select(`*, niveles_acceso (id, nombre)`)
             .single();
 
+        if (error) return { data: null, error };
+        return { data, error: null };
+    } catch (err) {
+        return { data: null, error: err };
+    }
+}
+
+export async function changePassword(id, newPassword) {
+    try {
+        if (!newPassword) return { data: null, error: new Error('La contraseña no puede estar vacía.') };
+        const contrasena_hash = await sha256(newPassword);
+        const sb = getSupabase();
+        const { data, error } = await sb
+            .from(TABLA)
+            .update({ contrasena_hash, updated_at: new Date().toISOString() })
+            .eq('id', id)
+            .select()
+            .single();
         if (error) return { data: null, error };
         return { data, error: null };
     } catch (err) {
