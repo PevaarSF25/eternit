@@ -353,7 +353,8 @@ function handleTabChange(container, tabValue) {
     viewForm.style.display = 'block';
   };
 
-  const permEdit = modo === 'Directo' ? 'EDIT_ESTADISTICAS_GENERAL' : 'EDIT_ESTADISTICAS_CONTRATISTAS';
+  const _modo = container._currentModo || 'Directo';
+  const permEdit = _modo === 'Directo' ? 'EDIT_ESTADISTICAS_GENERAL' : 'EDIT_ESTADISTICAS_CONTRATISTAS';
   const canEdit = hasPermission(permEdit);
 
   const showTable = () => {
