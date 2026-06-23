@@ -31,13 +31,22 @@ const MENU_ITEMS = [
             { label: 'Arneses', hash: '#inventario-arneses' }
         ]
     },
-    { 
-        label: 'Inspección', 
-        icon: 'shield-check', 
+    {
+        label: 'Inspección',
+        icon: 'shield-check',
         isCollapse: true,
         children: [
             { label: 'Inspección Extintores', hash: '#inspeccion-extintores' },
             { label: 'Inspección Arneses', hash: '#inspeccion-arneses' }
+        ]
+    },
+    {
+        label: 'Seguridad',
+        icon: 'lock',
+        isCollapse: true,
+        children: [
+            { label: 'Niveles de acceso', hash: '#seguridad-niveles' },
+            { label: 'Usuarios', hash: '#seguridad-usuarios' }
         ]
     }
 ];

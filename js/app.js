@@ -34,6 +34,14 @@ const routes = {
   '#inspeccion-arneses': {
     loadView: () => import('./views/inspeccionArnesesView.js').then(m => m.renderInspeccionArneses),
     title: 'Inspección Arneses'
+  },
+  '#seguridad-niveles': {
+    loadView: () => import('./views/nivelesAccesoView.js').then(m => m.renderNivelesAcceso),
+    title: 'Niveles de acceso'
+  },
+  '#seguridad-usuarios': {
+    loadView: () => import('./views/usuariosView.js').then(m => m.renderUsuarios),
+    title: 'Usuarios'
   }
 };
 
