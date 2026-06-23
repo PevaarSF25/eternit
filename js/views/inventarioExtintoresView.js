@@ -1,6 +1,7 @@
 import { showToast } from '../components/toast.js';
 import { showConfirmModal } from '../components/modal.js';
 import { createDataTable } from '../components/dataTable.js';
+import { hasPermission } from '../auth.js';
 import { getParametros } from '../services/parametricaService.js';
 import { initDatePicker } from '../components/datePicker.js';
 import {
@@ -176,10 +177,12 @@ function bindEvents(container) {
         viewForm.style.display = 'block';
     };
 
+    const canEdit = hasPermission('EDIT_INVENTARIO_EXTINTORES');
+
     const showTable = () => {
         viewForm.style.display = 'none';
         viewTable.style.display = 'block';
-        btnNuevoRegistro.style.display = 'inline-flex';
+        if (canEdit) btnNuevoRegistro.style.display = 'inline-flex';
         if (tableSearchWrapper) tableSearchWrapper.style.display = 'block';
         refreshTable(container);
     };
@@ -329,6 +332,7 @@ async function saveRecord(container) {
 }
 
 async function refreshTable(container, forceFetch = false) {
+    const canEdit = hasPermission('EDIT_INVENTARIO_EXTINTORES');
     const tableContainer = container.querySelector('#table-container');
     
     if (!dataTableInstance) {
@@ -390,10 +394,10 @@ async function refreshTable(container, forceFetch = false) {
         onView: async (record) => {
             await openRecordForEdit(container, record.id, true);
         },
-        onEdit: async (record) => {
+        onEdit: canEdit ? async (record) => {
             await openRecordForEdit(container, record.id, false);
-        },
-        onDelete: async (record) => {
+        } : undefined,
+        onDelete: canEdit ? async (record) => {
             const confirmed = await showConfirmModal('Eliminar', `¿Seguro que desea eliminar el extintor ${record.numero_serie}?`);
             if (confirmed) {
                 const delRes = await deleteInventario(record.id);
@@ -403,7 +407,7 @@ async function refreshTable(container, forceFetch = false) {
                     await refreshTable(container, true);
                 }
             }
-        },
+        } : undefined,
         emptyMessage: 'No hay extintores en el inventario.'
     });
 }

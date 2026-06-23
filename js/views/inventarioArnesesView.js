@@ -1,6 +1,7 @@
 import { showToast } from '../components/toast.js';
 import { showConfirmModal } from '../components/modal.js';
 import { createDataTable } from '../components/dataTable.js';
+import { hasPermission } from '../auth.js';
 import { getParametros } from '../services/parametricaService.js';
 import { initDatePicker } from '../components/datePicker.js';
 import {
@@ -223,10 +224,12 @@ function bindEvents(container) {
         viewForm.style.display = 'block';
     };
 
+    var canEdit = hasPermission('EDIT_INVENTARIO_ARNESES');
+
     var showTable = function() {
         viewForm.style.display = 'none';
         viewTable.style.display = 'block';
-        btnNuevoRegistro.style.display = 'inline-flex';
+        if (canEdit) btnNuevoRegistro.style.display = 'inline-flex';
         if (tableSearchWrapper) tableSearchWrapper.style.display = 'block';
         refreshTable(container);
     };
@@ -354,6 +357,7 @@ async function saveRecord(container) {
 }
 
 async function refreshTable(container, force) {
+    var canEdit = hasPermission('EDIT_INVENTARIO_ARNESES');
     var tableContainer = container.querySelector('#table-container');
     var searchInput = container.querySelector('#table-search-input');
 
@@ -412,14 +416,14 @@ async function refreshTable(container, force) {
             await loadHistorial(container, record.codigo);
             container._showForm();
         },
-        onEdit: async function(record) {
+        onEdit: canEdit ? async function(record) {
             currentRecordId = record.id;
             setFormData(container, record);
             setReadOnly(container, false);
             await loadHistorial(container, record.codigo);
             container._showForm();
-        },
-        onDelete: async function(record) {
+        } : undefined,
+        onDelete: canEdit ? async function(record) {
             var confirmed = await showConfirmModal('Eliminar Arnés', 'Esta acción no se puede deshacer y borrará las inspecciones asociadas.');
             if (confirmed) {
                 var res = await deleteInventario(record.id);
@@ -430,7 +434,7 @@ async function refreshTable(container, force) {
                     await refreshTable(container, true);
                 }
             }
-        }
+        } : undefined
     });
 }
 

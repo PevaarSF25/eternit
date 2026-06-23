@@ -1,6 +1,7 @@
 import { showToast } from '../components/toast.js';
 import { showConfirmModal } from '../components/modal.js';
 import { createDataTable } from '../components/dataTable.js';
+import { hasPermission } from '../auth.js';
 import { getParametros } from '../services/parametricaService.js';
 import { initDatePicker } from '../components/datePicker.js';
 import {
@@ -286,10 +287,12 @@ function bindEvents(container) {
         viewForm.style.display = 'block';
     };
 
+    const canEdit = hasPermission('EDIT_INSPECCION_ARNESES');
+
     const showTable = () => {
         viewForm.style.display = 'none';
         viewTable.style.display = 'block';
-        btnNuevoRegistro.style.display = 'inline-flex';
+        if (canEdit) btnNuevoRegistro.style.display = 'inline-flex';
         if (tableSearchWrapper) tableSearchWrapper.style.display = 'block';
         refreshTable(container);
     };
@@ -719,6 +722,7 @@ function renderDetallesForView(container, data) {
 // REFRESH TABLE
 // ══════════════════════════════════════════════════════════════════════════════
 async function refreshTable(container, force = false) {
+    const canEdit = hasPermission('EDIT_INSPECCION_ARNESES');
     const tableContainer = container.querySelector('#table-container');
     const searchInput = container.querySelector('#table-search-input');
     
@@ -827,10 +831,10 @@ async function refreshTable(container, force = false) {
         onView: async (record) => {
             await openRecordForEdit(container, record.id, true);
         },
-        onEdit: async (record) => {
+        onEdit: canEdit ? async (record) => {
             await openRecordForEdit(container, record.id, false);
-        },
-        onDelete: async (record) => {
+        } : undefined,
+        onDelete: canEdit ? async (record) => {
             const confirmed = await showConfirmModal('Eliminar Inspección', '¿Estás seguro de que deseas eliminar este registro?');
             if (confirmed) {
                 const res = await deleteInspeccion(record.id);
@@ -841,7 +845,7 @@ async function refreshTable(container, force = false) {
                     await refreshTable(container, true);
                 }
             }
-        }
+        } : undefined
     });
 }
 

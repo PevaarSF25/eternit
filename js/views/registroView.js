@@ -607,6 +607,9 @@ async function saveRecord(container) {
 }
 
 async function refreshTable(container, forceFetch = false) {
+  const _modo = container._currentModo || 'Directo';
+  const _permEdit = _modo === 'Directo' ? 'EDIT_ESTADISTICAS_GENERAL' : 'EDIT_ESTADISTICAS_CONTRATISTAS';
+  const canEdit = hasPermission(_permEdit);
   const tableContainer = container.querySelector('#table-container');
   
   // Show loading
