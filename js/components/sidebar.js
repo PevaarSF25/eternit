@@ -1,25 +1,22 @@
-/**
- * Sidebar Navigation Component
- * Renders the collapsible sidebar with menu items and active state management.
- */
+import { getSession } from '../auth.js';
 
 const MENU_ITEMS = [
-    { label: 'Dashboard', icon: 'bar-chart-2', hash: '#dashboard' },
-    { 
-        label: 'Administración', 
-        icon: 'building-2', 
+    { label: 'Dashboard', icon: 'bar-chart-2', hash: '#dashboard', permission: 'VIEW_DASHBOARD' },
+    {
+        label: 'Administración',
+        icon: 'building-2',
         isCollapse: true,
         children: [
-            { label: 'Paramétricas', hash: '#parametricas' }
+            { label: 'Paramétricas', hash: '#parametricas', permission: 'VIEW_PARAMETRICAS' }
         ]
     },
-    { 
-        label: 'Estadísticas', 
-        icon: 'clipboard-list', 
+    {
+        label: 'Estadísticas',
+        icon: 'clipboard-list',
         isCollapse: true,
         children: [
-            { label: 'General', hash: '#registro-general' },
-            { label: 'Contratistas', hash: '#registro-contratistas' }
+            { label: 'General', hash: '#registro-general', permission: 'VIEW_ESTADISTICAS_GENERAL' },
+            { label: 'Contratistas', hash: '#registro-contratistas', permission: 'VIEW_ESTADISTICAS_CONTRATISTAS' }
         ]
     },
     {
@@ -27,8 +24,8 @@ const MENU_ITEMS = [
         icon: 'package',
         isCollapse: true,
         children: [
-            { label: 'Extintores', hash: '#inventario-extintores' },
-            { label: 'Arneses', hash: '#inventario-arneses' }
+            { label: 'Extintores', hash: '#inventario-extintores', permission: 'VIEW_INVENTARIO_EXTINTORES' },
+            { label: 'Arneses', hash: '#inventario-arneses', permission: 'VIEW_INVENTARIO_ARNESES' }
         ]
     },
     {
@@ -36,8 +33,8 @@ const MENU_ITEMS = [
         icon: 'shield-check',
         isCollapse: true,
         children: [
-            { label: 'Inspección Extintores', hash: '#inspeccion-extintores' },
-            { label: 'Inspección Arneses', hash: '#inspeccion-arneses' }
+            { label: 'Inspección Extintores', hash: '#inspeccion-extintores', permission: 'VIEW_INSPECCION_EXTINTORES' },
+            { label: 'Inspección Arneses', hash: '#inspeccion-arneses', permission: 'VIEW_INSPECCION_ARNESES' }
         ]
     },
     {
@@ -45,11 +42,19 @@ const MENU_ITEMS = [
         icon: 'lock',
         isCollapse: true,
         children: [
-            { label: 'Niveles de acceso', hash: '#seguridad-niveles' },
-            { label: 'Usuarios', hash: '#seguridad-usuarios' }
+            { label: 'Niveles de acceso', hash: '#seguridad-niveles', permission: 'VIEW_NIVELES_ACCESO' },
+            { label: 'Usuarios', hash: '#seguridad-usuarios', permission: 'VIEW_USUARIOS' }
         ]
     }
 ];
+
+function canSee(permission) {
+    const s = getSession();
+    if (!s) return false;
+    if (s.isSuperAdmin) return true;
+    if (!permission) return true;
+    return Array.isArray(s.permisos) && s.permisos.includes(permission);
+}
 
 let isCollapsed = false;
 
@@ -76,12 +81,15 @@ export function initSidebar() {
 function renderSidebar(sidebar) {
     const menuItemsHtml = MENU_ITEMS.map(item => {
         if (item.isCollapse) {
-            const childrenHtml = item.children.map(child => `
+            const visibleChildren = item.children.filter(c => canSee(c.permission));
+            if (visibleChildren.length === 0) return '';
+
+            const childrenHtml = visibleChildren.map(child => `
                 <a href="${child.hash}" class="sidebar-nav-subitem" data-hash="${child.hash}">
                     <span class="sidebar-nav-label">${child.label}</span>
                 </a>
             `).join('');
-            
+
             return `
                 <div class="sidebar-nav-group">
                     <button class="sidebar-nav-item toggle-collapse" data-tooltip="${item.label}">
@@ -99,6 +107,7 @@ function renderSidebar(sidebar) {
                 </div>
             `;
         } else {
+            if (!canSee(item.permission)) return '';
             return `
                 <a href="${item.hash}" class="sidebar-nav-item" data-hash="${item.hash}" data-tooltip="${item.label}">
                     <span class="sidebar-nav-icon">

@@ -45,3 +45,12 @@ export function saveSession(sessionData) {
         expiresAt: Date.now() + SESSION_TTL
     }));
 }
+
+// Returns true if the current session has the given permission key.
+// Super admins bypass all checks.
+export function hasPermission(key) {
+    const s = getSession();
+    if (!s) return false;
+    if (s.isSuperAdmin) return true;
+    return Array.isArray(s.permisos) && s.permisos.includes(key);
+}

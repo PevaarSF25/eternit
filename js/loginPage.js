@@ -18,7 +18,7 @@ async function doLogin(email, password) {
     const sb = getSupabase();
     const { data, error } = await sb
         .from('usuarios')
-        .select('id, nombre, correo, estado, contrasena_hash, nivel_acceso_id, niveles_acceso(nombre)')
+        .select('id, nombre, correo, estado, contrasena_hash, nivel_acceso_id, niveles_acceso(nombre, permisos)')
         .eq('correo', emailLow)
         .maybeSingle();
 
@@ -32,6 +32,7 @@ async function doLogin(email, password) {
         nombre: data.nombre,
         correo: data.correo,
         nivel: data.niveles_acceso?.nombre || 'USER',
+        permisos: data.niveles_acceso?.permisos || [],
         isSuperAdmin: false
     });
     return { ok: true };

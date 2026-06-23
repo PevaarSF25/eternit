@@ -1,6 +1,7 @@
 import { showToast } from '../components/toast.js';
 import { showModal, showConfirmModal } from '../components/modal.js';
 import { createDataTable } from '../components/dataTable.js';
+import { hasPermission } from '../auth.js';
 import { getParametros } from '../services/parametricaService.js';
 import { initDatePicker } from '../components/datePicker.js';
 import { 
@@ -192,10 +193,12 @@ function bindEvents(container) {
         viewForm.style.display = 'block';
     };
 
+    const canEdit = hasPermission('EDIT_INSPECCION_EXTINTORES');
+
     const showTable = () => {
         viewForm.style.display = 'none';
         viewTable.style.display = 'block';
-        btnNuevoRegistro.style.display = 'inline-flex';
+        if (canEdit) btnNuevoRegistro.style.display = 'inline-flex';
         if (tableSearchWrapper) tableSearchWrapper.style.display = 'block';
         refreshTable(container);
     };
@@ -525,17 +528,19 @@ function getEstadosBadgesHtml(det) {
 }
 
 function getActionButtons(id) {
+    const canEdit = hasPermission('EDIT_INSPECCION_EXTINTORES');
     return `
     <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
         <button data-action="view" data-id="${id}" title="Ver" style="background:var(--accent-bg);border:1px solid var(--border-focus);border-radius:6px;padding:6px;cursor:pointer;color:var(--accent);display:flex;align-items:center;">
             <i data-lucide="eye" style="width:14px;height:14px;"></i>
         </button>
+        ${canEdit ? `
         <button data-action="edit" data-id="${id}" title="Editar" style="background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.2);border-radius:6px;padding:6px;cursor:pointer;color:#00b4d8;display:flex;align-items:center;">
             <i data-lucide="pencil" style="width:14px;height:14px;"></i>
         </button>
         <button data-action="delete" data-id="${id}" title="Eliminar" style="background:var(--danger-bg);border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:6px;cursor:pointer;color:var(--danger);display:flex;align-items:center;">
             <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-        </button>
+        </button>` : ''}
     </div>`;
 }
 
