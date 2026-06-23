@@ -242,8 +242,10 @@ function bindEvents(container) {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        await saveRecord(container);
-        showTable();
+        const success = await saveRecord(container);
+        if (success) {
+            showTable();
+        }
     });
 
     showTable();
@@ -495,9 +497,10 @@ async function saveRecord(container) {
         showToast(currentRecordId ? 'Inspección actualizada' : 'Inspección guardada', 'success');
         resetForm(container);
         await refreshTable(container, true);
-        
+        return true;
     } catch (err) {
         showToast(err.message || 'Error al guardar', 'error');
+        return false;
     } finally {
         btn.innerHTML = originalHtml;
         btn.disabled = false;

@@ -78,6 +78,8 @@ export async function createInspeccion(cabecera, detalles) {
                 
             if (detallesError) {
                 console.error('[inspeccionService] create details error:', detallesError);
+                // Rollback: delete header if details fail to save
+                await sb.from('inspecciones_extintores').delete().eq('id', header.id);
                 return { data: null, error: detallesError };
             }
         }
@@ -145,6 +147,19 @@ export async function updateInspeccion(id, cabecera, detalles) {
 export async function deleteInspeccion(id) {
     try {
         const sb = getSupabase();
+        
+        // 1. Delete details first to avoid foreign key violations
+        const { error: deleteDetailsError } = await sb
+            .from('extintores_detalle')
+            .delete()
+            .eq('inspeccion_id', id);
+            
+        if (deleteDetailsError) {
+            console.error('[inspeccionService] delete details error:', deleteDetailsError);
+            return { data: null, error: deleteDetailsError };
+        }
+
+        // 2. Delete header
         const { data, error } = await sb
             .from('inspecciones_extintores')
             .delete()

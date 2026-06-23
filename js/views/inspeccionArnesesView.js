@@ -107,13 +107,13 @@ const CATEGORIAS_EVALUACION = [
 ];
 
 // ── Tag style helpers ──────────────────────────────────────────────────────────
-var _BASE = 'padding:6px 14px; border-radius:20px; border:1.5px solid; cursor:pointer; font-size:12px; font-weight:600; transition:all 0.15s; white-space:nowrap; line-height:1.2;';
+var _BASE = 'padding:5px 12px; border-radius:20px; border:1.5px solid; cursor:pointer; font-size:12px; font-weight:600; transition:all 0.15s; white-space:nowrap; line-height:1.2; display:inline-flex; align-items:center;';
 var STYLE_BUEN_ON  = _BASE + 'background:#22c55e; color:#ffffff; border-color:#22c55e; box-shadow:0 0 0 2px rgba(34,197,94,0.2);';
-var STYLE_BUEN_OFF = _BASE + 'background:#f0fdf4; color:#16a34a; border-color:#bbf7d0; opacity:0.75;';
-var STYLE_BAD_ON   = _BASE + 'background:#ef4444; color:#ffffff; border-color:#ef4444; font-weight:700; box-shadow:0 0 0 2px rgba(239,68,68,0.2);';
-var STYLE_BAD_OFF  = _BASE + 'background:#fef2f2; color:#dc2626; border-color:#fecaca; opacity:0.75;';
+var STYLE_BUEN_OFF = _BASE + 'background:#f0fdf4; color:#16a34a; border-color:#bbf7d0;';
+var STYLE_BAD_ON   = _BASE + 'background:#ef4444; color:#ffffff; border-color:#ef4444; box-shadow:0 0 0 2px rgba(239,68,68,0.2);';
+var STYLE_BAD_OFF  = _BASE + 'background:#fef2f2; color:#dc2626; border-color:#fecaca;';
 var STYLE_NA_ON    = _BASE + 'background:#6b7280; color:#ffffff; border-color:#6b7280; box-shadow:0 0 0 2px rgba(107,114,128,0.2);';
-var STYLE_NA_OFF   = _BASE + 'background:#f3f4f6; color:#4b5563; border-color:#e5e7eb; opacity:0.75;';
+var STYLE_NA_OFF   = _BASE + 'background:#f3f4f6; color:#4b5563; border-color:#e5e7eb;';
 
 // ── Estado badge helper ────────────────────────────────────────────────────────
 var ESTADO_STYLES = {
@@ -327,8 +327,10 @@ function bindEvents(container) {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        await saveRecord(container);
-        showTable();
+        const success = await saveRecord(container);
+        if (success) {
+            showTable();
+        }
     });
 
     showTable();
@@ -357,9 +359,7 @@ function getArnesCardHTML(index, data) {
     // ── Category sections ───────────────────────────────────────────────────
     var gruposHtml = '';
     CATEGORIAS_EVALUACION.forEach(function(cat) {
-        var isNA     = data[cat.categoryKey + '_no_aplica'] === 'true';
-        var anyDef   = cat.items.some(function(elem) { return data[elem.key] === 'Mal estado'; });
-        var buenOn   = !isNA && !anyDef;
+        var isNA   = data[cat.categoryKey + '_no_aplica'] === 'true';
 
         // Help text
         var helpHtml = '';
@@ -369,77 +369,72 @@ function getArnesCardHTML(index, data) {
                 + '</div>';
         }
 
-        // Action buttons (No Aplica | Buen Estado)
-        var actionHtml =
-            '<button type="button" class="eval-cat-btn tag-no-aplica' + (isNA ? ' active' : '') + '" data-category-key="' + cat.categoryKey + '" '
-            + 'style="' + (isNA ? STYLE_NA_ON : STYLE_NA_OFF) + '">No Aplica</button>'
-            + '<button type="button" class="eval-cat-btn tag-buen-estado' + (buenOn ? ' active' : '') + '" data-category-key="' + cat.categoryKey + '" '
-            + 'style="' + (buenOn ? STYLE_BUEN_ON : STYLE_BUEN_OFF) + '">Buen Estado</button>';
+        // All tags in ONE flat row: Buen Estado · No Aplica · defects
+        var buenOn = false;
+        if (Object.keys(data).length > 0) {
+            buenOn = !isNA && !cat.items.some(function(elem) { return data[elem.key] === 'Mal estado'; });
+        }
+        var allTagsHtml =
+            '<button type="button" class="eval-tag tag-buen-estado' + (buenOn ? ' active' : '') + '" '
+            + 'data-category-key="' + cat.categoryKey + '" '
+            + 'style="' + (buenOn ? STYLE_BUEN_ON : STYLE_BUEN_OFF) + '">Buen Estado</button>'
+            + '<button type="button" class="eval-tag tag-no-aplica' + (isNA ? ' active' : '') + '" '
+            + 'data-category-key="' + cat.categoryKey + '" '
+            + 'style="' + (isNA ? STYLE_NA_ON : STYLE_NA_OFF) + '">No Aplica</button>';
 
-        // Defect tags
-        var defectsHtml = '';
         cat.items.forEach(function(elem) {
-            var isActive = !isNA && data[elem.key] === 'Mal estado';
-            var opacityStyle = isNA || buenOn ? ' opacity:0.4; pointer-events:none;' : '';
-            defectsHtml += '<button type="button" class="eval-tag tag-defect' + (isActive ? ' active' : '') + '" '
+            var isActive = data[elem.key] === 'Mal estado';
+            allTagsHtml += '<button type="button" class="eval-tag tag-defect' + (isActive ? ' active' : '') + '" '
                 + 'data-field="' + elem.key + '" '
-                + 'style="' + (isActive ? STYLE_BAD_ON : STYLE_BAD_OFF) + opacityStyle + '">'
+                + 'style="' + (isActive ? STYLE_BAD_ON : STYLE_BAD_OFF) + '">'
                 + elem.label + '</button>';
-            defectsHtml += '<input type="hidden" data-field="' + elem.key + '" value="' + (isActive ? 'Mal estado' : '') + '">';
         });
-        // No-aplica hidden field
-        defectsHtml += '<input type="hidden" data-field="' + cat.categoryKey + '_no_aplica" value="' + (isNA ? 'true' : '') + '">';
+
+        // Hidden fields
+        var hiddenHtml = '';
+        cat.items.forEach(function(elem) {
+            var isActive = data[elem.key] === 'Mal estado';
+            hiddenHtml += '<input type="hidden" data-field="' + elem.key + '" value="' + (isActive ? 'Mal estado' : '') + '">';
+        });
+        hiddenHtml += '<input type="hidden" data-field="' + cat.categoryKey + '_no_aplica" value="' + (isNA ? 'true' : '') + '">';
+        hiddenHtml += '<input type="hidden" data-field="' + cat.categoryKey + '_buen" value="' + (buenOn ? 'true' : '') + '">';
 
         gruposHtml +=
             '<div class="eval-category" data-cat-key="' + cat.categoryKey + '" '
             + 'style="border-top:1px solid var(--border-light); padding-top:var(--space-4); margin-top:var(--space-4);">'
-            // Header row: title + action buttons
-            + '<div style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:8px;">'
-            + '<h5 style="margin:0; color:var(--text-secondary); font-size:11px; text-transform:uppercase; letter-spacing:0.6px; font-weight:700;">' + cat.title + '</h5>'
-            + '<div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">' + actionHtml + '</div>'
-            + '</div>'
+            + '<div style="margin-bottom:8px;">'
+            + '<h5 style="margin:0 0 8px 0; color:var(--text-secondary); font-size:11px; text-transform:uppercase; letter-spacing:0.6px; font-weight:700;">' + cat.title + '</h5>'
             + helpHtml
-            // Defect tags row
-            + '<div class="eval-defects-container" data-category-key="' + cat.categoryKey + '" '
+            + '<div class="eval-tags-row" data-category-key="' + cat.categoryKey + '" '
             + 'style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; min-height:32px;">'
-            + defectsHtml
+            + allTagsHtml
+            + hiddenHtml
+            + '</div>'
             + '</div>'
             + '</div>';
     });
 
     // ── Status strip ────────────────────────────────────────────────────────
-    // Look up current arnés estado from inventory
-    var invArnes = window._inventarioArneses && window._inventarioArneses.find(function(e) { return e.codigo === data.codigo_arnes; });
-    var estadoActualHtml = '<span style="color:var(--text-muted); font-size:12px; font-style:italic;">— Sin seleccionar</span>';
-    if (invArnes && invArnes.estado) {
-        var sc = ESTADO_STYLES[invArnes.estado] || { bg: '#f3f4f6', color: '#6b7280', border: '#e5e7eb' };
-        estadoActualHtml = badgeHtml(invArnes.estado, sc.bg, sc.color, sc.border);
-    }
-
-    // Calc initial resultado
-    var hasAnyDef = CATEGORIAS_EVALUACION.some(function(cat) {
-        return cat.items.some(function(elem) { return data[elem.key] === 'Mal estado'; });
-    });
-    var allNA = CATEGORIAS_EVALUACION.every(function(cat) { return data[cat.categoryKey + '_no_aplica'] === 'true'; });
-    var initResultado, irBg, irColor, irBorder;
-    if (hasAnyDef) {
-        initResultado = 'Con Defectos'; irBg = '#fee2e2'; irColor = '#b91c1c'; irBorder = '#fca5a5';
-    } else if (allNA) {
-        initResultado = 'No Aplica'; irBg = '#e5e7eb'; irColor = '#374151'; irBorder = '#9ca3af';
-    } else {
-        initResultado = 'Aprobado'; irBg = '#dcfce7'; irColor = '#15803d'; irBorder = '#86efac';
-    }
+    var currentResultado = data.resultado_inspeccion || '';
+    var RESULTADO_OPTIONS = [
+        { value: 'Aprobado',               label: 'Aprobado' },
+        { value: 'Aprobado con observaciones', label: 'Aprobado con observaciones' },
+        { value: 'Con Defectos',           label: 'Con Defectos' },
+        { value: 'Rechazado',              label: 'Rechazado' },
+        { value: 'Fuera de servicio',      label: 'Fuera de servicio' }
+    ];
+    var resultadoOptions = '<option value="" disabled' + (!currentResultado ? ' selected' : '') + '>Seleccione resultado...</option>'
+        + RESULTADO_OPTIONS.map(function(o) {
+            return '<option value="' + o.value + '"' + (currentResultado === o.value ? ' selected' : '') + '>' + o.label + '</option>';
+        }).join('');
 
     var statusStripHtml =
-        '<div class="arnes-status-strip" style="display:flex; align-items:center; gap:var(--space-6); background:var(--bg-light,#f8fafc); border-top:1.5px solid var(--border-default); border-radius:0 0 calc(var(--radius-md) - 4px) calc(var(--radius-md) - 4px); padding:var(--space-5) var(--space-6); margin-top:var(--space-6); margin-left:calc(-1*var(--space-4)); margin-right:calc(-1*var(--space-4)); margin-bottom:calc(-1*var(--space-4));">'
-        + '<div style="flex:1;">'
-        + '<div style="font-size:12px; color:var(--text-secondary); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Estado actual del arnés</div>'
-        + '<div class="arnes-estado-actual" style="font-size:14px; font-weight:600;">' + estadoActualHtml + '</div>'
-        + '</div>'
-        + '<div style="width:1px; height:48px; background:var(--border-default); flex-shrink:0;"></div>'
-        + '<div>'
-        + '<div style="font-size:12px; color:var(--text-secondary); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Resultado Inspección</div>'
-        + '<div class="arnes-resultado">' + badgeHtml(initResultado, irBg, irColor, irBorder) + '</div>'
+        '<div class="arnes-status-strip" style="display:flex; align-items:center; gap:var(--space-4); background:var(--bg-light,#f8fafc); border-top:1.5px solid var(--border-default); border-radius:0 0 calc(var(--radius-md) - 4px) calc(var(--radius-md) - 4px); padding:var(--space-4) var(--space-6); margin-top:var(--space-6); margin-left:calc(-1*var(--space-4)); margin-right:calc(-1*var(--space-4)); margin-bottom:calc(-1*var(--space-4));">'
+        + '<div style="flex:1; max-width:320px;">'
+        + '<label style="font-size:11px; color:var(--text-secondary); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; display:block;">Resultado de la Inspección</label>'
+        + '<select class="form-select arnes-resultado-select" data-field="resultado_inspeccion" style="font-size:13px; font-weight:600; padding:6px 12px;">'
+        + resultadoOptions
+        + '</select>'
         + '</div>'
         + '</div>';
 
@@ -488,170 +483,117 @@ function addArnesCard(container, data) {
                 if (fieldMarca) fieldMarca.value = '';
                 if (fieldTalla) fieldTalla.value = '';
             }
-            _updateEstadoActual(newCard, arnes);
         });
-
-        // Pre-fill for edit/view mode
-        if (selectorCodigo.value) {
-            var arnes = window._inventarioArneses && window._inventarioArneses.find(function(e) { return e.codigo === selectorCodigo.value; });
-            _updateEstadoActual(newCard, arnes);
-        }
     }
 
-    // 2. Category button logic (per category)
+    // 2. Free-toggle logic for all tags in each category (no blocking)
     newCard.querySelectorAll('.eval-category').forEach(function(categoryEl) {
         var catKey = categoryEl.dataset.catKey;
-        var buenBtn = categoryEl.querySelector('.tag-buen-estado[data-category-key="' + catKey + '"]');
-        var naBtn   = categoryEl.querySelector('.tag-no-aplica[data-category-key="' + catKey + '"]');
-        var defsContainer = categoryEl.querySelector('.eval-defects-container[data-category-key="' + catKey + '"]');
-        var naHidden = categoryEl.querySelector('input[data-field="' + catKey + '_no_aplica"]');
+        var tagsRow = categoryEl.querySelector('.eval-tags-row[data-category-key="' + catKey + '"]');
+        if (!tagsRow) return;
 
-        function getDefBtns() {
-            return Array.from(defsContainer.querySelectorAll('.tag-defect'));
+        // Helper to get hidden field inside tagsRow
+        function getHidden(fieldName) {
+            return tagsRow.querySelector('input[data-field="' + fieldName + '"]');
         }
 
-        function clearDefects() {
-            getDefBtns().forEach(function(d) {
-                d.classList.remove('active');
-                d.style.cssText = STYLE_BAD_OFF;
-                var h = defsContainer.querySelector('input[data-field="' + d.dataset.field + '"]');
-                if (h) h.value = '';
-            });
-        }
-
-        function enableDefects(enable) {
-            getDefBtns().forEach(function(d) {
-                d.style.opacity = enable ? '' : '0.4';
-                d.style.pointerEvents = enable ? '' : 'none';
-            });
-        }
-
-        function activateNA() {
-            if (naBtn) { naBtn.classList.add('active'); naBtn.style.cssText = STYLE_NA_ON; }
-            if (buenBtn) { buenBtn.classList.remove('active'); buenBtn.style.cssText = STYLE_BUEN_OFF; }
-            clearDefects();
-            enableDefects(false);
-            if (naHidden) naHidden.value = 'true';
-            _updateStatusStrip(newCard);
-        }
-
-        function deactivateNA() {
-            if (naBtn) { naBtn.classList.remove('active'); naBtn.style.cssText = STYLE_NA_OFF; }
-            if (naHidden) naHidden.value = '';
-        }
-
-        function activateBuen() {
-            if (buenBtn) { buenBtn.classList.add('active'); buenBtn.style.cssText = STYLE_BUEN_ON; }
-            if (naBtn) { naBtn.classList.remove('active'); naBtn.style.cssText = STYLE_NA_OFF; }
-            clearDefects();
-            enableDefects(false);
-            if (naHidden) naHidden.value = '';
-            _updateStatusStrip(newCard);
-        }
-
-        function deactivateBuen() {
-            if (buenBtn) { buenBtn.classList.remove('active'); buenBtn.style.cssText = STYLE_BUEN_OFF; }
-        }
-
-        // "No Aplica" click
-        if (naBtn) {
-            naBtn.addEventListener('click', function() {
-                var fieldset = container.querySelector('#form-fieldset');
-                if (fieldset && fieldset.disabled) return;
-                if (naBtn.classList.contains('active')) {
-                    // Toggle off → revert to Buen Estado
-                    deactivateNA();
-                    if (buenBtn) { buenBtn.classList.add('active'); buenBtn.style.cssText = STYLE_BUEN_ON; }
-                } else {
-                    activateNA();
-                }
-                _updateStatusStrip(newCard);
-            });
-        }
-
-        // "Buen Estado" click
-        if (buenBtn) {
-            buenBtn.addEventListener('click', function() {
-                var fieldset = container.querySelector('#form-fieldset');
-                if (fieldset && fieldset.disabled) return;
-                deactivateNA();
-                buenBtn.classList.add('active');
-                buenBtn.style.cssText = STYLE_BUEN_ON;
-                clearDefects();
-                _updateStatusStrip(newCard);
-            });
-        }
-
-        // Defect tag clicks
-        getDefBtns().forEach(function(defBtn) {
-            defBtn.addEventListener('click', function() {
+        // All clickable tags inside this category
+        tagsRow.querySelectorAll('.eval-tag').forEach(function(tagBtn) {
+            tagBtn.addEventListener('click', function() {
                 var fieldset = container.querySelector('#form-fieldset');
                 if (fieldset && fieldset.disabled) return;
 
-                // If No Aplica was active, deactivate it first
-                if (naBtn && naBtn.classList.contains('active')) {
-                    deactivateNA();
+                var isBuen = tagBtn.classList.contains('tag-buen-estado');
+                var isNA   = tagBtn.classList.contains('tag-no-aplica');
+                var isDefect = tagBtn.classList.contains('tag-defect');
+
+                if (isBuen) {
+                    var nowActive = !tagBtn.classList.contains('active');
+                    tagBtn.classList.toggle('active', nowActive);
+                    tagBtn.style.cssText = nowActive ? STYLE_BUEN_ON : STYLE_BUEN_OFF;
+                    var buenH = getHidden(catKey + '_buen');
+                    if (buenH) buenH.value = nowActive ? 'true' : '';
+
+                    if (nowActive) {
+                        // Deselect "No Aplica"
+                        var naBtn = tagsRow.querySelector('.tag-no-aplica');
+                        if (naBtn && naBtn.classList.contains('active')) {
+                            naBtn.classList.remove('active');
+                            naBtn.style.cssText = STYLE_NA_OFF;
+                            var naH = getHidden(catKey + '_no_aplica');
+                            if (naH) naH.value = '';
+                        }
+                        // Deselect all defects
+                        tagsRow.querySelectorAll('.tag-defect').forEach(function(defBtn) {
+                            if (defBtn.classList.contains('active')) {
+                                defBtn.classList.remove('active');
+                                defBtn.style.cssText = STYLE_BAD_OFF;
+                                var defH = getHidden(defBtn.dataset.field);
+                                if (defH) defH.value = '';
+                            }
+                        });
+                    }
+                } else if (isNA) {
+                    var nowActive = !tagBtn.classList.contains('active');
+                    tagBtn.classList.toggle('active', nowActive);
+                    tagBtn.style.cssText = nowActive ? STYLE_NA_ON : STYLE_NA_OFF;
+                    var naH = getHidden(catKey + '_no_aplica');
+                    if (naH) naH.value = nowActive ? 'true' : '';
+
+                    if (nowActive) {
+                        // Deselect "Buen Estado"
+                        var buenBtn = tagsRow.querySelector('.tag-buen-estado');
+                        if (buenBtn && buenBtn.classList.contains('active')) {
+                            buenBtn.classList.remove('active');
+                            buenBtn.style.cssText = STYLE_BUEN_OFF;
+                            var buenH = getHidden(catKey + '_buen');
+                            if (buenH) buenH.value = '';
+                        }
+                        // Deselect all defects
+                        tagsRow.querySelectorAll('.tag-defect').forEach(function(defBtn) {
+                            if (defBtn.classList.contains('active')) {
+                                defBtn.classList.remove('active');
+                                defBtn.style.cssText = STYLE_BAD_OFF;
+                                var defH = getHidden(defBtn.dataset.field);
+                                if (defH) defH.value = '';
+                            }
+                        });
+                    }
+                } else if (isDefect) {
+                    var nowActive = !tagBtn.classList.contains('active');
+                    tagBtn.classList.toggle('active', nowActive);
+                    tagBtn.style.cssText = nowActive ? STYLE_BAD_ON : STYLE_BAD_OFF;
+                    var defH = getHidden(tagBtn.dataset.field);
+                    if (defH) defH.value = nowActive ? 'Mal estado' : '';
+
+                    if (nowActive) {
+                        // Deselect "Buen Estado"
+                        var buenBtn = tagsRow.querySelector('.tag-buen-estado');
+                        if (buenBtn && buenBtn.classList.contains('active')) {
+                            buenBtn.classList.remove('active');
+                            buenBtn.style.cssText = STYLE_BUEN_OFF;
+                            var buenH = getHidden(catKey + '_buen');
+                            if (buenH) buenH.value = '';
+                        }
+                        // Deselect "No Aplica"
+                        var naBtn = tagsRow.querySelector('.tag-no-aplica');
+                        if (naBtn && naBtn.classList.contains('active')) {
+                            naBtn.classList.remove('active');
+                            naBtn.style.cssText = STYLE_NA_OFF;
+                            var naH = getHidden(catKey + '_no_aplica');
+                            if (naH) naH.value = '';
+                        }
+                    }
                 }
-
-                var nowActive = !defBtn.classList.contains('active');
-                defBtn.classList.toggle('active', nowActive);
-                defBtn.style.cssText = nowActive ? STYLE_BAD_ON : STYLE_BAD_OFF;
-
-                var hidden = defsContainer.querySelector('input[data-field="' + defBtn.dataset.field + '"]');
-                if (hidden) hidden.value = nowActive ? 'Mal estado' : '';
-
-                // Toggle Buen Estado based on whether any defect is active
-                var anyActive = getDefBtns().some(function(d) { return d.classList.contains('active'); });
-                if (buenBtn) {
-                    buenBtn.classList.toggle('active', !anyActive);
-                    buenBtn.style.cssText = !anyActive ? STYLE_BUEN_ON : STYLE_BUEN_OFF;
-                }
-                _updateStatusStrip(newCard);
             });
         });
     });
 
     if (window.lucide) window.lucide.createIcons({ nodes: [newCard] });
     updateArnesesEmptyState(container);
-    _updateStatusStrip(newCard);
 }
 
-// ── Internal helpers for card state ───────────────────────────────────────────
-function _updateEstadoActual(card, arnes) {
-    var el = card.querySelector('.arnes-estado-actual');
-    if (!el) return;
-    if (arnes && arnes.estado) {
-        var sc = ESTADO_STYLES[arnes.estado] || { bg: '#f3f4f6', color: '#6b7280', border: '#e5e7eb' };
-        el.innerHTML = badgeHtml(arnes.estado, sc.bg, sc.color, sc.border);
-    } else {
-        el.innerHTML = '<span style="color:var(--text-muted); font-size:12px; font-style:italic;">— Sin seleccionar</span>';
-    }
-}
-
-function _updateStatusStrip(card) {
-    var resultEl = card.querySelector('.arnes-resultado');
-    if (!resultEl) return;
-
-    var hasDefect = card.querySelectorAll('.tag-defect.active').length > 0;
-    var categories = card.querySelectorAll('.eval-category');
-    var totalCats = categories.length;
-    var naCount = 0;
-    categories.forEach(function(catEl) {
-        var catKey = catEl.dataset.catKey;
-        var naH = catEl.querySelector('input[data-field="' + catKey + '_no_aplica"]');
-        if (naH && naH.value === 'true') naCount++;
-    });
-
-    var res, bg, color, border;
-    if (hasDefect) {
-        res = 'Con Defectos'; bg = '#fee2e2'; color = '#b91c1c'; border = '#fca5a5';
-    } else if (totalCats > 0 && naCount === totalCats) {
-        res = 'No Aplica'; bg = '#e5e7eb'; color = '#374151'; border = '#9ca3af';
-    } else {
-        res = 'Aprobado'; bg = '#dcfce7'; color = '#15803d'; border = '#86efac';
-    }
-    resultEl.innerHTML = badgeHtml(res, bg, color, border);
-}
+// ── (status strip is now a select - no dynamic badge update needed) ────────────
 
 // ══════════════════════════════════════════════════════════════════════════════
 // UTILITIES
@@ -694,7 +636,14 @@ function getFormData(container) {
     const detalles = [];
     container.querySelectorAll('.arnes-card').forEach(card => {
         const item = {};
-        card.querySelectorAll('input[data-field], select[data-field]').forEach(el => {
+        // Capture hidden inputs for field values
+        card.querySelectorAll('input[data-field]').forEach(el => {
+            if (['marca', 'talla'].includes(el.dataset.field)) return;
+            if (el.dataset.field.endsWith('_buen')) return;
+            item[el.dataset.field] = el.value || null;
+        });
+        // Capture select inputs (resultado_inspeccion and codigo_arnes)
+        card.querySelectorAll('select[data-field]').forEach(el => {
             if (['marca', 'talla'].includes(el.dataset.field)) return;
             item[el.dataset.field] = el.value || null;
         });
@@ -724,9 +673,10 @@ async function saveRecord(container) {
         showToast(currentRecordId ? 'Inspección actualizada' : 'Inspección guardada', 'success');
         resetForm(container);
         await refreshTable(container, true);
-        
+        return true;
     } catch (err) {
         showToast(err.message || 'Error al guardar', 'error');
+        return false;
     } finally {
         btn.innerHTML = originalHtml;
         btn.disabled = false;

@@ -53,6 +53,44 @@ export async function getInspeccionById(id) {
     }
 }
 
+let hasNoAplicaColumns = null;
+
+async function checkNoAplicaColumns() {
+    if (hasNoAplicaColumns !== null) return hasNoAplicaColumns;
+    try {
+        const sb = getSupabase();
+        const { error } = await sb.from('arneses_detalle').select('argollas_no_aplica').limit(1);
+        if (error) {
+            console.warn('[inspeccionArnesesService] argollas_no_aplica is missing or query failed:', error);
+            hasNoAplicaColumns = false;
+        } else {
+            hasNoAplicaColumns = true;
+        }
+    } catch (e) {
+        hasNoAplicaColumns = false;
+    }
+    return hasNoAplicaColumns;
+}
+
+async function cleanDetalles(detalles) {
+    if (!detalles || detalles.length === 0) return detalles;
+    const hasNA = await checkNoAplicaColumns();
+    if (!hasNA) {
+        return detalles.map(d => {
+            const copy = { ...d };
+            delete copy.cintas_no_aplica;
+            delete copy.costuras_no_aplica;
+            delete copy.hebillas_no_aplica;
+            delete copy.argollas_no_aplica;
+            delete copy.etiquetas_no_aplica;
+            delete copy.caida_no_aplica;
+            delete copy.general_no_aplica;
+            return copy;
+        });
+    }
+    return detalles;
+}
+
 export async function createInspeccion(cabecera, detalles) {
     try {
         const sb = getSupabase();
@@ -71,13 +109,16 @@ export async function createInspeccion(cabecera, detalles) {
         
         // 2. Insert details
         if (detalles && detalles.length > 0) {
-            const detallesWithId = detalles.map(d => ({ ...d, inspeccion_id: header.id }));
+            const cleaned = await cleanDetalles(detalles);
+            const detallesWithId = cleaned.map(d => ({ ...d, inspeccion_id: header.id }));
             const { error: detallesError } = await sb
                 .from('arneses_detalle')
                 .insert(detallesWithId);
                 
             if (detallesError) {
                 console.error('[inspeccionArnesesService] create details error:', detallesError);
+                // Rollback: delete header if details fail to save
+                await sb.from('inspecciones_arneses').delete().eq('id', header.id);
                 return { data: null, error: detallesError };
             }
         }
@@ -118,7 +159,8 @@ export async function updateInspeccion(id, cabecera, detalles) {
         }
         
         if (detalles && detalles.length > 0) {
-            const detallesWithId = detalles.map(d => {
+            const cleaned = await cleanDetalles(detalles);
+            const detallesWithId = cleaned.map(d => {
                 // Ignore any possible client side IDs when inserting fresh
                 const cleanDetail = { ...d, inspeccion_id: id };
                 delete cleanDetail.id;
@@ -145,6 +187,19 @@ export async function updateInspeccion(id, cabecera, detalles) {
 export async function deleteInspeccion(id) {
     try {
         const sb = getSupabase();
+        
+        // 1. Delete details first to avoid foreign key violations
+        const { error: deleteDetailsError } = await sb
+            .from('arneses_detalle')
+            .delete()
+            .eq('inspeccion_id', id);
+            
+        if (deleteDetailsError) {
+            console.error('[inspeccionArnesesService] delete details error:', deleteDetailsError);
+            return { data: null, error: deleteDetailsError };
+        }
+
+        // 2. Delete header
         const { data, error } = await sb
             .from('inspecciones_arneses')
             .delete()
