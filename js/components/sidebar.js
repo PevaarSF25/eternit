@@ -3,6 +3,15 @@ import { getSession } from '../auth.js';
 const MENU_ITEMS = [
     { label: 'Dashboard', icon: 'bar-chart-2', hash: '#dashboard', permission: 'VIEW_DASHBOARD' },
     {
+        label: 'Seguridad',
+        icon: 'lock',
+        isCollapse: true,
+        children: [
+            { label: 'Niveles de acceso', hash: '#seguridad-niveles', permission: 'VIEW_NIVELES_ACCESO' },
+            { label: 'Usuarios', hash: '#seguridad-usuarios', permission: 'VIEW_USUARIOS' }
+        ]
+    },
+    {
         label: 'Administración',
         icon: 'building-2',
         isCollapse: true,
@@ -35,15 +44,6 @@ const MENU_ITEMS = [
         children: [
             { label: 'Inspección Extintores', hash: '#inspeccion-extintores', permission: 'VIEW_INSPECCION_EXTINTORES' },
             { label: 'Inspección Arneses', hash: '#inspeccion-arneses', permission: 'VIEW_INSPECCION_ARNESES' }
-        ]
-    },
-    {
-        label: 'Seguridad',
-        icon: 'lock',
-        isCollapse: true,
-        children: [
-            { label: 'Niveles de acceso', hash: '#seguridad-niveles', permission: 'VIEW_NIVELES_ACCESO' },
-            { label: 'Usuarios', hash: '#seguridad-usuarios', permission: 'VIEW_USUARIOS' }
         ]
     }
 ];
