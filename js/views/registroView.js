@@ -1,4 +1,5 @@
 import { getAllRegistros, createRegistro, updateRegistro, deleteRegistro } from '../services/registroService.js';
+import { hasPermission } from '../auth.js';
 import { calcularTodosLosIndicadores } from '../services/calculoService.js';
 import { getParametros } from '../services/parametricaService.js';
 import { showToast } from '../components/toast.js';
@@ -352,11 +353,14 @@ function handleTabChange(container, tabValue) {
     viewForm.style.display = 'block';
   };
 
+  const permEdit = modo === 'Directo' ? 'EDIT_ESTADISTICAS_GENERAL' : 'EDIT_ESTADISTICAS_CONTRATISTAS';
+  const canEdit = hasPermission(permEdit);
+
   const showTable = () => {
     viewForm.style.display = 'none';
     viewTable.style.display = 'block';
-    btnNuevoRegistro.style.display = 'inline-flex';
-    if (btnExportarCsv) btnExportarCsv.style.display = 'inline-flex';
+    if (canEdit) btnNuevoRegistro.style.display = 'inline-flex';
+    if (canEdit && btnExportarCsv) btnExportarCsv.style.display = 'inline-flex';
     if (tableSearchWrapper) tableSearchWrapper.style.display = 'block';
     refreshTable(container);
   };
@@ -1049,7 +1053,7 @@ async function refreshTable(container, forceFetch = false) {
         setReadOnly(container, true);
         container._showForm();
       },
-      onEdit: (record) => {
+      onEdit: canEdit ? (record) => {
         if (record.isContratistaAcumulado || record.isSubtotal || record.tipo !== 'Directo') {
           showToast('No se puede editar un registro de contratistas desde esta vista', 'warning');
           return;
@@ -1057,8 +1061,8 @@ async function refreshTable(container, forceFetch = false) {
         loadRecordIntoForm(container, record);
         setReadOnly(container, false);
         container._showForm();
-      },
-      onDelete: async (record) => {
+      } : undefined,
+      onDelete: canEdit ? async (record) => {
         if (record.isContratistaAcumulado || record.isSubtotal || record.tipo !== 'Directo') {
           showToast('No se puede eliminar un registro de contratistas desde esta vista', 'warning');
           return;
@@ -1072,7 +1076,7 @@ async function refreshTable(container, forceFetch = false) {
             await refreshTable(container, true);
           }
         }
-      },
+      } : undefined,
       emptyMessage: 'No hay registros guardados.'
     });
 
@@ -1172,12 +1176,12 @@ async function refreshTable(container, forceFetch = false) {
         setReadOnly(container, true);
         container._showForm();
       },
-      onEdit: (record) => {
+      onEdit: canEdit ? (record) => {
         loadRecordIntoForm(container, record);
         setReadOnly(container, false);
         container._showForm();
-      },
-      onDelete: async (record) => {
+      } : undefined,
+      onDelete: canEdit ? async (record) => {
         const confirmed = await showConfirmModal('Eliminar', `¿Seguro que desea eliminar el registro de ${record.mes} ${record.anio}?`);
         if (confirmed) {
           const delRes = await deleteRegistro(record.id);
@@ -1187,7 +1191,7 @@ async function refreshTable(container, forceFetch = false) {
             await refreshTable(container, true);
           }
         }
-      },
+      } : undefined,
       emptyMessage: 'No hay registros guardados para contratistas.'
     });
   }

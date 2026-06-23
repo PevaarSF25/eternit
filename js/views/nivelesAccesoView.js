@@ -6,6 +6,7 @@ import {
     updateNivelAcceso,
     deleteNivelAcceso
 } from '../services/accessLevelService.js';
+import { hasPermission } from '../auth.js';
 
 const PERMISSION_GROUPS = [
     {
@@ -159,6 +160,8 @@ export async function renderNivelesAcceso(container) {
 
     if (window.lucide) window.lucide.createIcons();
 
+    const canEdit = hasPermission('MANAGE_NIVELES_ACCESO');
+
     const tbody = container.querySelector('#niveles-tbody');
     const searchInput = container.querySelector('#search-niveles');
     const modal = container.querySelector('#nivel-modal');
@@ -204,39 +207,43 @@ export async function renderNivelesAcceso(container) {
                 <td style="color:var(--text-secondary);font-size:var(--text-sm);">${item.descripcion || '—'}</td>
                 <td style="text-align:right;">
                     <div class="actions-wrapper">
+                        ${canEdit ? `
                         <button class="btn-action edit" data-id="${item.id}" title="Editar">
                             <i data-lucide="pencil" style="width:16px;height:16px;"></i>
                         </button>
                         <button class="btn-action delete" data-id="${item.id}" title="Eliminar">
                             <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
                         </button>
+                        ` : ''}
                     </div>
                 </td>
             </tr>
         `).join('');
 
-        tbody.querySelectorAll('.btn-action.edit').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const item = state.items.find(i => i.id === btn.dataset.id);
-                if (item) openModal(item);
+        if (canEdit) {
+            tbody.querySelectorAll('.btn-action.edit').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const item = state.items.find(i => i.id === btn.dataset.id);
+                    if (item) openModal(item);
+                });
             });
-        });
 
-        tbody.querySelectorAll('.btn-action.delete').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const item = state.items.find(i => i.id === btn.dataset.id);
-                const ok = await showConfirmModal(
-                    'Eliminar nivel de acceso',
-                    `¿Estás seguro de eliminar el nivel "<strong>${item?.nombre}</strong>"? Esta acción no se puede deshacer.`
-                );
-                if (!ok) return;
-                const { error } = await deleteNivelAcceso(btn.dataset.id);
-                if (error) { showToast(`Error: ${error.message}`, 'error'); return; }
-                state.items = state.items.filter(i => i.id !== btn.dataset.id);
-                renderTable();
-                showToast('Nivel de acceso eliminado', 'success');
+            tbody.querySelectorAll('.btn-action.delete').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const item = state.items.find(i => i.id === btn.dataset.id);
+                    const ok = await showConfirmModal(
+                        'Eliminar nivel de acceso',
+                        `¿Estás seguro de eliminar el nivel "<strong>${item?.nombre}</strong>"? Esta acción no se puede deshacer.`
+                    );
+                    if (!ok) return;
+                    const { error } = await deleteNivelAcceso(btn.dataset.id);
+                    if (error) { showToast(`Error: ${error.message}`, 'error'); return; }
+                    state.items = state.items.filter(i => i.id !== btn.dataset.id);
+                    renderTable();
+                    showToast('Nivel de acceso eliminado', 'success');
+                });
             });
-        });
+        }
 
         if (window.lucide) window.lucide.createIcons({ nodes: [tbody] });
     }
@@ -346,7 +353,12 @@ export async function renderNivelesAcceso(container) {
         renderTable();
     });
 
-    container.querySelector('#btn-nuevo-nivel').addEventListener('click', () => openModal());
+    const btnNuevoNivel = container.querySelector('#btn-nuevo-nivel');
+    if (!canEdit) {
+        btnNuevoNivel.style.display = 'none';
+    } else {
+        btnNuevoNivel.addEventListener('click', () => openModal());
+    }
     container.querySelector('#btn-close-modal').addEventListener('click', closeModal);
     container.querySelector('#btn-cancel-modal').addEventListener('click', closeModal);
     container.querySelector('#btn-save-modal').addEventListener('click', handleSave);

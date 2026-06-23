@@ -1,6 +1,7 @@
 import { showToast } from '../components/toast.js';
 import { showConfirmModal } from '../components/modal.js';
 import { getParametros, createParametro, updateParametro, deleteParametro } from '../services/parametricaService.js';
+import { hasPermission } from '../auth.js';
 
 // --- System Categories Definitions (Master View) ---
 // These are fixed system-level categories. Their sub-values are stored in Supabase.
@@ -128,6 +129,8 @@ export async function renderParametricas(container) {
     window.lucide.createIcons();
   }
 
+  const canEdit = hasPermission('EDIT_PARAMETRICAS');
+
   // DOM Elements
   const masterView = container.querySelector('#master-view');
   const detailView = container.querySelector('#detail-view');
@@ -226,42 +229,46 @@ export async function renderParametricas(container) {
         <td style="font-weight: 500; color: var(--text-primary);">${val.valor}</td>
         <td style="text-align: right;">
           <div class="actions-wrapper">
+            ${canEdit ? `
             <button class="btn-action edit" data-id="${val.id}" title="Editar">
               <i data-lucide="pencil" style="width:16px;height:16px;"></i>
             </button>
             <button class="btn-action delete" data-id="${val.id}" title="Eliminar">
               <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
             </button>
+            ` : ''}
           </div>
         </td>
       </tr>
     `).join('');
 
     // Attach events for detail view table
-    valuesTbody.querySelectorAll('.btn-action.edit').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const valId = btn.dataset.id;
-        const value = state.values.find(v => v.id === valId);
-        openModal(value);
+    if (canEdit) {
+      valuesTbody.querySelectorAll('.btn-action.edit').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const valId = btn.dataset.id;
+          const value = state.values.find(v => v.id === valId);
+          openModal(value);
+        });
       });
-    });
 
-    valuesTbody.querySelectorAll('.btn-action.delete').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const valId = btn.dataset.id;
-        const confirmed = await showConfirmModal('Eliminar Parámetro', '¿Estás seguro de eliminar este parámetro? Esta acción no se puede deshacer.');
-        if (confirmed) {
-          const { error } = await deleteParametro(valId);
-          if (error) {
-            showToast(`Error al eliminar: ${error.message}`, 'error');
-            return;
+      valuesTbody.querySelectorAll('.btn-action.delete').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const valId = btn.dataset.id;
+          const confirmed = await showConfirmModal('Eliminar Parámetro', '¿Estás seguro de eliminar este parámetro? Esta acción no se puede deshacer.');
+          if (confirmed) {
+            const { error } = await deleteParametro(valId);
+            if (error) {
+              showToast(`Error al eliminar: ${error.message}`, 'error');
+              return;
+            }
+            state.values = state.values.filter(v => v.id !== valId);
+            renderDetailView(searchValues.value);
+            showToast('Eliminado correctamente', 'success');
           }
-          state.values = state.values.filter(v => v.id !== valId);
-          renderDetailView(searchValues.value);
-          showToast('Eliminado correctamente', 'success');
-        }
+        });
       });
-    });
+    }
 
     if (window.lucide) window.lucide.createIcons({ nodes: [valuesTbody] });
   }
@@ -410,9 +417,14 @@ export async function renderParametricas(container) {
 
   btnBack.addEventListener('click', closeDetailView);
   
-  container.querySelector('#btn-new-value').addEventListener('click', () => {
-    openModal();
-  });
+  const btnNewValue = container.querySelector('#btn-new-value');
+  if (!canEdit) {
+    btnNewValue.style.display = 'none';
+  } else {
+    btnNewValue.addEventListener('click', () => {
+      openModal();
+    });
+  }
 
   btnCloseModal.addEventListener('click', closeModal);
   btnCancelModal.addEventListener('click', closeModal);

@@ -2,6 +2,7 @@ import { showToast } from '../components/toast.js';
 import { showConfirmModal } from '../components/modal.js';
 import { getUsuarios, createUsuario, updateUsuario, deleteUsuario, changePassword } from '../services/userService.js';
 import { getNivelesAcceso } from '../services/accessLevelService.js';
+import { hasPermission } from '../auth.js';
 
 let state = {
     items: [],
@@ -149,6 +150,8 @@ export async function renderUsuarios(container) {
 
     if (window.lucide) window.lucide.createIcons();
 
+    const canEdit = hasPermission('MANAGE_USUARIOS');
+
     const tbody = container.querySelector('#usuarios-tbody');
     const searchInput = container.querySelector('#search-usuarios');
     const modal = container.querySelector('#usuario-modal');
@@ -222,26 +225,32 @@ export async function renderUsuarios(container) {
                 <td>${estadoBadge}</td>
                 <td style="text-align:right;">
                     <div class="actions-wrapper">
+                        ${canEdit ? `
                         <button class="btn-action edit" data-id="${item.id}" title="Editar">
                             <i data-lucide="pencil" style="width:16px;height:16px;"></i>
                         </button>
+                        ` : ''}
                         <button class="btn-action view" data-id="${item.id}" title="Ver detalle" style="--hover-color:var(--color-info,#3b82f6)">
                             <i data-lucide="eye" style="width:16px;height:16px;"></i>
                         </button>
+                        ${canEdit ? `
                         <button class="btn-action delete" data-id="${item.id}" title="Eliminar">
                             <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
                         </button>
+                        ` : ''}
                     </div>
                 </td>
             </tr>`;
         }).join('');
 
-        tbody.querySelectorAll('.btn-action.edit').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const item = state.items.find(i => i.id === btn.dataset.id);
-                if (item) openModal(item);
+        if (canEdit) {
+            tbody.querySelectorAll('.btn-action.edit').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const item = state.items.find(i => i.id === btn.dataset.id);
+                    if (item) openModal(item);
+                });
             });
-        });
+        }
 
         tbody.querySelectorAll('.btn-action.view').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -250,21 +259,23 @@ export async function renderUsuarios(container) {
             });
         });
 
-        tbody.querySelectorAll('.btn-action.delete').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const item = state.items.find(i => i.id === btn.dataset.id);
-                const ok = await showConfirmModal(
-                    'Eliminar usuario',
-                    `¿Estás seguro de eliminar a <strong>${item?.nombre}</strong>? Esta acción no se puede deshacer.`
-                );
-                if (!ok) return;
-                const { error } = await deleteUsuario(btn.dataset.id);
-                if (error) { showToast(`Error: ${error.message}`, 'error'); return; }
-                state.items = state.items.filter(i => i.id !== btn.dataset.id);
-                renderTable();
-                showToast('Usuario eliminado correctamente', 'success');
+        if (canEdit) {
+            tbody.querySelectorAll('.btn-action.delete').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const item = state.items.find(i => i.id === btn.dataset.id);
+                    const ok = await showConfirmModal(
+                        'Eliminar usuario',
+                        `¿Estás seguro de eliminar a <strong>${item?.nombre}</strong>? Esta acción no se puede deshacer.`
+                    );
+                    if (!ok) return;
+                    const { error } = await deleteUsuario(btn.dataset.id);
+                    if (error) { showToast(`Error: ${error.message}`, 'error'); return; }
+                    state.items = state.items.filter(i => i.id !== btn.dataset.id);
+                    renderTable();
+                    showToast('Usuario eliminado correctamente', 'success');
+                });
             });
-        });
+        }
 
         if (window.lucide) window.lucide.createIcons({ nodes: [tbody] });
     }
@@ -407,7 +418,12 @@ export async function renderUsuarios(container) {
         renderTable();
     });
 
-    container.querySelector('#btn-nuevo-usuario').addEventListener('click', () => openModal());
+    const btnNuevoUsuario = container.querySelector('#btn-nuevo-usuario');
+    if (!canEdit) {
+        btnNuevoUsuario.style.display = 'none';
+    } else {
+        btnNuevoUsuario.addEventListener('click', () => openModal());
+    }
     container.querySelector('#btn-close-usuario-modal').addEventListener('click', closeModal);
     container.querySelector('#btn-cancel-usuario-modal').addEventListener('click', closeModal);
     container.querySelector('#btn-save-usuario').addEventListener('click', handleSave);
