@@ -17,6 +17,24 @@ function generarPasswordAleatoria() {
     return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
+function markError(input, msg) {
+    input.style.border = '1.5px solid var(--danger, #ef4444)';
+    let err = input.parentElement.querySelector('.field-error');
+    if (!err) {
+        err = document.createElement('span');
+        err.className = 'field-error';
+        err.style.cssText = 'color:var(--danger,#ef4444);font-size:12px;margin-top:4px;display:block;';
+        input.parentElement.appendChild(err);
+    }
+    err.textContent = msg;
+}
+
+function clearError(input) {
+    input.style.border = '';
+    const err = input.parentElement.querySelector('.field-error');
+    if (err) err.remove();
+}
+
 export async function renderUsuarios(container) {
     container.innerHTML = `
         <div class="parametricas-container">
@@ -64,10 +82,10 @@ export async function renderUsuarios(container) {
                     <button class="modal-close" id="btn-close-usuario-modal"><i data-lucide="x"></i></button>
                 </div>
                 <div class="modal-body" style="gap:0;">
-                    <form id="usuario-form">
+                    <form id="usuario-form" novalidate>
                         <div class="form-group">
                             <label class="form-label">Nombre completo *</label>
-                            <input type="text" class="form-input" id="u-nombre" required placeholder="Ej: Juan Pérez">
+                            <input type="text" class="form-input" id="u-nombre" placeholder="Ej: Juan Pérez">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Documento de identidad</label>
@@ -75,7 +93,7 @@ export async function renderUsuarios(container) {
                         </div>
                         <div class="form-group">
                             <label class="form-label">Correo electrónico *</label>
-                            <input type="email" class="form-input" id="u-correo" required placeholder="correo@empresa.com">
+                            <input type="email" class="form-input" id="u-correo" placeholder="correo@empresa.com">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Nivel de acceso</label>
@@ -127,7 +145,7 @@ export async function renderUsuarios(container) {
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" id="btn-cancel-usuario-modal">Cancelar</button>
-                    <button class="btn btn-primary btn-glow" id="btn-save-usuario" disabled>Crear usuario</button>
+                    <button class="btn btn-primary btn-glow" id="btn-save-usuario">Crear usuario</button>
                 </div>
             </div>
         </div>
@@ -173,104 +191,104 @@ export async function renderUsuarios(container) {
     // Load data in parallel
     const [usersResult, nivelesResult] = await Promise.all([getUsuarios(), getNivelesAcceso()]);
 
-    if (usersResult.error) showToast(`Error cargando usuarios: ${usersResult.error.message}`, 'error');
-    if (nivelesResult.error) showToast(`Error cargando niveles: ${nivelesResult.error.message}`, 'error');
+    if (usersResult.error) showToast('Error cargando usuarios: ' + usersResult.error.message, 'error');
+    if (nivelesResult.error) showToast('Error cargando niveles: ' + nivelesResult.error.message, 'error');
 
     state.items = usersResult.data || [];
     state.niveles = nivelesResult.data || [];
 
-    // Populate nivel select
-    function populateNivelSelect(selectedId = '') {
+    function populateNivelSelect(selectedId) {
+        selectedId = selectedId || '';
         selectNivel.innerHTML = '<option value="">— Sin nivel —</option>' +
-            state.niveles.map(n => `<option value="${n.id}" ${n.id === selectedId ? 'selected' : ''}>${n.nombre}</option>`).join('');
+            state.niveles.map(function(n) {
+                return '<option value="' + n.id + '"' + (n.id === selectedId ? ' selected' : '') + '>' + n.nombre + '</option>';
+            }).join('');
     }
 
-    // Enable save when required fields are filled
-    function checkFormValidity() {
-        btnSave.disabled = !inputNombre.value.trim() || !inputCorreo.value.trim();
-    }
-    inputNombre.addEventListener('input', checkFormValidity);
-    inputCorreo.addEventListener('input', checkFormValidity);
+    // Clear error on input
+    inputNombre.addEventListener('input', function() { clearError(inputNombre); });
+    inputCorreo.addEventListener('input', function() { clearError(inputCorreo); });
 
     function renderTable() {
-        const q = state.searchQuery.toLowerCase();
-        const filtered = q
-            ? state.items.filter(i =>
-                i.nombre.toLowerCase().includes(q) ||
-                (i.correo || '').toLowerCase().includes(q) ||
-                (i.documento || '').toLowerCase().includes(q) ||
-                (i.niveles_acceso?.nombre || '').toLowerCase().includes(q)
-            )
+        var q = state.searchQuery.toLowerCase();
+        var filtered = q
+            ? state.items.filter(function(i) {
+                return i.nombre.toLowerCase().includes(q)
+                    || (i.correo || '').toLowerCase().includes(q)
+                    || (i.documento || '').toLowerCase().includes(q)
+                    || ((i.niveles_acceso && i.niveles_acceso.nombre) || '').toLowerCase().includes(q);
+            })
             : state.items;
 
         if (!filtered.length) {
-            tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">
-                <i data-lucide="users" class="empty-state-icon"></i>
-                <span>${q ? 'No se encontraron usuarios.' : 'No hay usuarios registrados. Crea el primero.'}</span>
-            </div></td></tr>`;
+            tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">'
+                + '<i data-lucide="users" class="empty-state-icon"></i>'
+                + '<span>' + (q ? 'No se encontraron usuarios.' : 'No hay usuarios registrados. Crea el primero.') + '</span>'
+                + '</div></td></tr>';
             if (window.lucide) window.lucide.createIcons({ nodes: [tbody] });
             return;
         }
 
-        tbody.innerHTML = filtered.map(item => {
-            const estadoBadge = item.estado === 'activo'
-                ? `<span class="badge badge-success" style="gap:4px;"><i data-lucide="check-circle" style="width:12px;height:12px;"></i> Activo</span>`
-                : `<span class="badge badge-warning" style="gap:4px;"><i data-lucide="clock" style="width:12px;height:12px;"></i> Inactivo</span>`;
+        tbody.innerHTML = filtered.map(function(item) {
+            var estadoBadge = item.estado === 'activo'
+                ? '<span class="badge badge-success" style="gap:4px;"><i data-lucide="check-circle" style="width:12px;height:12px;"></i> Activo</span>'
+                : '<span class="badge badge-warning" style="gap:4px;"><i data-lucide="clock" style="width:12px;height:12px;"></i> Inactivo</span>';
 
-            return `<tr>
-                <td style="font-weight:600;color:var(--text-primary);">${item.nombre}</td>
-                <td style="color:var(--text-secondary);font-size:var(--text-sm);">${item.documento || '—'}</td>
-                <td style="color:var(--text-secondary);font-size:var(--text-sm);">${item.correo}</td>
-                <td>${item.niveles_acceso ? `<span class="td-code" style="font-size:11px;">${item.niveles_acceso.nombre}</span>` : '—'}</td>
-                <td>${estadoBadge}</td>
-                <td style="text-align:right;">
-                    <div class="actions-wrapper">
-                        ${canEdit ? `
-                        <button class="btn-action edit" data-id="${item.id}" title="Editar">
-                            <i data-lucide="pencil" style="width:16px;height:16px;"></i>
-                        </button>
-                        ` : ''}
-                        <button class="btn-action view" data-id="${item.id}" title="Ver detalle" style="--hover-color:var(--color-info,#3b82f6)">
-                            <i data-lucide="eye" style="width:16px;height:16px;"></i>
-                        </button>
-                        ${canEdit ? `
-                        <button class="btn-action delete" data-id="${item.id}" title="Eliminar">
-                            <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
-                        </button>
-                        ` : ''}
-                    </div>
-                </td>
-            </tr>`;
+            var nivelBadge = (item.niveles_acceso && item.niveles_acceso.nombre)
+                ? '<span class="td-code" style="font-size:11px;">' + item.niveles_acceso.nombre + '</span>'
+                : '—';
+
+            var editBtn = canEdit
+                ? '<button class="btn-action edit" data-id="' + item.id + '" title="Editar"><i data-lucide="pencil" style="width:16px;height:16px;"></i></button>'
+                : '';
+
+            var deleteBtn = canEdit
+                ? '<button class="btn-action delete" data-id="' + item.id + '" title="Eliminar"><i data-lucide="trash-2" style="width:16px;height:16px;"></i></button>'
+                : '';
+
+            return '<tr>'
+                + '<td style="font-weight:600;color:var(--text-primary);">' + item.nombre + '</td>'
+                + '<td style="color:var(--text-secondary);font-size:var(--text-sm);">' + (item.documento || '—') + '</td>'
+                + '<td style="color:var(--text-secondary);font-size:var(--text-sm);">' + item.correo + '</td>'
+                + '<td>' + nivelBadge + '</td>'
+                + '<td>' + estadoBadge + '</td>'
+                + '<td style="text-align:right;">'
+                + '<div class="actions-wrapper">'
+                + editBtn
+                + '<button class="btn-action view" data-id="' + item.id + '" title="Ver detalle"><i data-lucide="eye" style="width:16px;height:16px;"></i></button>'
+                + deleteBtn
+                + '</div></td>'
+                + '</tr>';
         }).join('');
 
         if (canEdit) {
-            tbody.querySelectorAll('.btn-action.edit').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const item = state.items.find(i => i.id === btn.dataset.id);
+            tbody.querySelectorAll('.btn-action.edit').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var item = state.items.find(function(i) { return i.id === btn.dataset.id; });
                     if (item) openModal(item);
                 });
             });
         }
 
-        tbody.querySelectorAll('.btn-action.view').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const item = state.items.find(i => i.id === btn.dataset.id);
+        tbody.querySelectorAll('.btn-action.view').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var item = state.items.find(function(i) { return i.id === btn.dataset.id; });
                 if (item) openViewModal(item);
             });
         });
 
         if (canEdit) {
-            tbody.querySelectorAll('.btn-action.delete').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    const item = state.items.find(i => i.id === btn.dataset.id);
-                    const ok = await showConfirmModal(
+            tbody.querySelectorAll('.btn-action.delete').forEach(function(btn) {
+                btn.addEventListener('click', async function() {
+                    var item = state.items.find(function(i) { return i.id === btn.dataset.id; });
+                    var ok = await showConfirmModal(
                         'Eliminar usuario',
-                        `¿Estás seguro de eliminar a <strong>${item?.nombre}</strong>? Esta acción no se puede deshacer.`
+                        '¿Estás seguro de eliminar a <strong>' + (item ? item.nombre : '') + '</strong>? Esta acción no se puede deshacer.'
                     );
                     if (!ok) return;
-                    const { error } = await deleteUsuario(btn.dataset.id);
-                    if (error) { showToast(`Error: ${error.message}`, 'error'); return; }
-                    state.items = state.items.filter(i => i.id !== btn.dataset.id);
+                    var result = await deleteUsuario(btn.dataset.id);
+                    if (result.error) { showToast('Error: ' + result.error.message, 'error'); return; }
+                    state.items = state.items.filter(function(i) { return i.id !== btn.dataset.id; });
                     renderTable();
                     showToast('Usuario eliminado correctamente', 'success');
                 });
@@ -280,11 +298,32 @@ export async function renderUsuarios(container) {
         if (window.lucide) window.lucide.createIcons({ nodes: [tbody] });
     }
 
-    function openModal(item = null) {
+    function validateForm() {
+        var ok = true;
+        var nombre = inputNombre.value.trim();
+        var correo = inputCorreo.value.trim();
+
+        if (!nombre) {
+            markError(inputNombre, 'El nombre es obligatorio.');
+            ok = false;
+        }
+        if (!correo) {
+            markError(inputCorreo, 'El correo es obligatorio.');
+            ok = false;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+            markError(inputCorreo, 'Ingresa un correo válido.');
+            ok = false;
+        }
+        return ok;
+    }
+
+    function openModal(item) {
+        item = item || null;
         state.editingItem = item;
         form.reset();
-        btnSave.disabled = true;
-        populateNivelSelect(item?.nivel_acceso_id || '');
+        clearError(inputNombre);
+        clearError(inputCorreo);
+        populateNivelSelect(item ? item.nivel_acceso_id : '');
 
         if (item) {
             modalTitle.textContent = 'Editar usuario';
@@ -297,7 +336,6 @@ export async function renderUsuarios(container) {
             passwordSection.style.display = 'none';
             changePwdSection.style.display = 'block';
             if (inputNuevaPwd) inputNuevaPwd.value = '';
-            btnSave.disabled = false;
         } else {
             modalTitle.textContent = 'Nuevo usuario';
             btnSave.textContent = 'Crear usuario';
@@ -314,124 +352,139 @@ export async function renderUsuarios(container) {
         modal.classList.remove('active');
         state.editingItem = null;
         form.reset();
+        clearError(inputNombre);
+        clearError(inputCorreo);
     }
 
     function openViewModal(item) {
         state.viewingItem = item;
-        const nivelNombre = item.niveles_acceso?.nombre || '—';
-        const estadoBadge = item.estado === 'activo'
-            ? `<span class="badge badge-success">Activo</span>`
-            : `<span class="badge badge-warning">Inactivo</span>`;
+        var nivelNombre = (item.niveles_acceso && item.niveles_acceso.nombre) ? item.niveles_acceso.nombre : '—';
+        var estadoBadge = item.estado === 'activo'
+            ? '<span class="badge badge-success">Activo</span>'
+            : '<span class="badge badge-warning">Inactivo</span>';
+        var nivelHtml = nivelNombre !== '—'
+            ? '<span class="td-code">' + nivelNombre + '</span>'
+            : '—';
 
-        viewModalBody.innerHTML = `
-            <div class="view-field"><span class="form-label">Nombre</span><p style="font-weight:600;color:var(--text-primary);margin:0;">${item.nombre}</p></div>
-            <div class="view-field"><span class="form-label">Documento</span><p style="color:var(--text-secondary);margin:0;">${item.documento || '—'}</p></div>
-            <div class="view-field"><span class="form-label">Correo</span><p style="color:var(--text-secondary);margin:0;">${item.correo}</p></div>
-            <div class="view-field"><span class="form-label">Nivel de acceso</span><p style="margin:0;">${nivelNombre !== '—' ? `<span class="td-code">${nivelNombre}</span>` : '—'}</p></div>
-            <div class="view-field"><span class="form-label">Estado</span><p style="margin:0;">${estadoBadge}</p></div>
-            <div class="view-field"><span class="form-label">Creado</span><p style="color:var(--text-muted);font-size:var(--text-xs);margin:0;">${item.created_at ? new Date(item.created_at).toLocaleDateString('es-CO') : '—'}</p></div>
-        `;
+        viewModalBody.innerHTML = ''
+            + '<div class="view-field"><span class="form-label">Nombre</span><p style="font-weight:600;color:var(--text-primary);margin:0;">' + item.nombre + '</p></div>'
+            + '<div class="view-field"><span class="form-label">Documento</span><p style="color:var(--text-secondary);margin:0;">' + (item.documento || '—') + '</p></div>'
+            + '<div class="view-field"><span class="form-label">Correo</span><p style="color:var(--text-secondary);margin:0;">' + item.correo + '</p></div>'
+            + '<div class="view-field"><span class="form-label">Nivel de acceso</span><p style="margin:0;">' + nivelHtml + '</p></div>'
+            + '<div class="view-field"><span class="form-label">Estado</span><p style="margin:0;">' + estadoBadge + '</p></div>'
+            + '<div class="view-field"><span class="form-label">Creado</span><p style="color:var(--text-muted);font-size:var(--text-xs);margin:0;">' + (item.created_at ? new Date(item.created_at).toLocaleDateString('es-CO') : '—') + '</p></div>';
+
         if (window.lucide) window.lucide.createIcons({ nodes: [viewModalBody] });
         viewModal.classList.add('active');
     }
 
     async function handleSave() {
-        const nombre = inputNombre.value.trim();
-        const correo = inputCorreo.value.trim();
-        if (!nombre || !correo) { showToast('Nombre y correo son obligatorios', 'error'); return; }
+        if (!validateForm()) return;
 
-        const payload = {
-            nombre,
+        var nombre = inputNombre.value.trim();
+        var correo = inputCorreo.value.trim();
+
+        var payload = {
+            nombre: nombre,
             documento: inputDocumento.value.trim(),
-            correo,
+            correo: correo,
             nivel_acceso_id: selectNivel.value || null,
             estado: selectEstado.value
         };
 
+        var originalText = btnSave.textContent;
         btnSave.disabled = true;
         btnSave.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px"></div> Guardando...';
 
         try {
             if (state.editingItem) {
-                const { data, error } = await updateUsuario(state.editingItem.id, payload);
-                if (error) { showToast(`Error: ${error.message}`, 'error'); return; }
-                const idx = state.items.findIndex(i => i.id === state.editingItem.id);
-                if (idx !== -1 && data) state.items[idx] = data;
+                var updateRes = await updateUsuario(state.editingItem.id, payload);
+                if (updateRes.error) { showToast('Error: ' + updateRes.error.message, 'error'); return; }
+                var idx = state.items.findIndex(function(i) { return i.id === state.editingItem.id; });
+                if (idx !== -1 && updateRes.data) state.items[idx] = updateRes.data;
 
-                // Change password if entered
-                const nuevaPwd = inputNuevaPwd?.value?.trim();
+                var nuevaPwd = inputNuevaPwd ? inputNuevaPwd.value.trim() : '';
                 if (nuevaPwd) {
-                    const { error: pwdErr } = await changePassword(state.editingItem.id, nuevaPwd);
-                    if (pwdErr) showToast(`Advertencia: no se pudo cambiar la contraseña: ${pwdErr.message}`, 'warning');
+                    var pwdRes = await changePassword(state.editingItem.id, nuevaPwd);
+                    if (pwdRes.error) showToast('Advertencia: no se pudo cambiar la contraseña: ' + pwdRes.error.message, 'warning');
                     else showToast('Usuario y contraseña actualizados', 'success');
                 } else {
                     showToast('Usuario actualizado correctamente', 'success');
                 }
             } else {
-                const { data, error } = await createUsuario({ ...payload, password: inputPassword.value || undefined });
-                if (error) { showToast(`Error: ${error.message}`, 'error'); return; }
-                if (data) state.items.push(data);
+                var createRes = await createUsuario(Object.assign({}, payload, { password: inputPassword.value || undefined }));
+                if (createRes.error) { showToast('Error: ' + createRes.error.message, 'error'); return; }
+                if (createRes.data) state.items.push(createRes.data);
                 showToast('Usuario creado correctamente', 'success');
             }
             renderTable();
             closeModal();
         } finally {
             btnSave.disabled = false;
-            btnSave.textContent = state.editingItem ? 'Guardar cambios' : 'Crear usuario';
+            btnSave.textContent = originalText;
         }
     }
 
-    // Password generation/copy (create mode)
-    container.querySelector('#btn-generar-pwd').addEventListener('click', () => {
+    // Password buttons (create mode)
+    container.querySelector('#btn-generar-pwd').addEventListener('click', function() {
         inputPassword.value = generarPasswordAleatoria();
     });
 
-    container.querySelector('#btn-copiar-pwd').addEventListener('click', async () => {
+    container.querySelector('#btn-copiar-pwd').addEventListener('click', async function() {
         if (!inputPassword.value) return;
         try {
             await navigator.clipboard.writeText(inputPassword.value);
             showToast('Contraseña copiada al portapapeles', 'success');
-        } catch {
+        } catch (e) {
             showToast('No se pudo copiar. Cópiala manualmente.', 'warning');
         }
     });
 
-    // Password generation/copy (edit mode)
-    container.querySelector('#btn-generar-nueva-pwd')?.addEventListener('click', () => {
-        if (inputNuevaPwd) inputNuevaPwd.value = generarPasswordAleatoria();
-    });
+    // Password buttons (edit mode)
+    var btnGenerarNueva = container.querySelector('#btn-generar-nueva-pwd');
+    if (btnGenerarNueva) {
+        btnGenerarNueva.addEventListener('click', function() {
+            if (inputNuevaPwd) inputNuevaPwd.value = generarPasswordAleatoria();
+        });
+    }
 
-    container.querySelector('#btn-copiar-nueva-pwd')?.addEventListener('click', async () => {
-        const val = inputNuevaPwd?.value;
-        if (!val) return;
-        try {
-            await navigator.clipboard.writeText(val);
-            showToast('Nueva contraseña copiada', 'success');
-        } catch {
-            showToast('No se pudo copiar. Cópiala manualmente.', 'warning');
-        }
-    });
+    var btnCopiarNueva = container.querySelector('#btn-copiar-nueva-pwd');
+    if (btnCopiarNueva) {
+        btnCopiarNueva.addEventListener('click', async function() {
+            var val = inputNuevaPwd ? inputNuevaPwd.value : '';
+            if (!val) return;
+            try {
+                await navigator.clipboard.writeText(val);
+                showToast('Nueva contraseña copiada', 'success');
+            } catch (e) {
+                showToast('No se pudo copiar. Cópiala manualmente.', 'warning');
+            }
+        });
+    }
 
-    // Events
-    searchInput.addEventListener('input', () => {
+    // Search
+    searchInput.addEventListener('input', function() {
         state.searchQuery = searchInput.value;
         renderTable();
     });
 
-    const btnNuevoUsuario = container.querySelector('#btn-nuevo-usuario');
+    // Nuevo usuario button
+    var btnNuevoUsuario = container.querySelector('#btn-nuevo-usuario');
     if (!canEdit) {
         btnNuevoUsuario.style.display = 'none';
     } else {
-        btnNuevoUsuario.addEventListener('click', () => openModal());
+        btnNuevoUsuario.addEventListener('click', function() { openModal(); });
     }
+
+    // Modal events — NO outside-click close
     container.querySelector('#btn-close-usuario-modal').addEventListener('click', closeModal);
     container.querySelector('#btn-cancel-usuario-modal').addEventListener('click', closeModal);
     container.querySelector('#btn-save-usuario').addEventListener('click', handleSave);
-    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 
-    container.querySelector('#btn-close-view-modal').addEventListener('click', () => viewModal.classList.remove('active'));
-    container.querySelector('#btn-close-view-modal-2').addEventListener('click', () => viewModal.classList.remove('active'));
-    viewModal.addEventListener('click', e => { if (e.target === viewModal) viewModal.classList.remove('active'); });
+    // View modal events — outside-click IS fine here (read-only)
+    container.querySelector('#btn-close-view-modal').addEventListener('click', function() { viewModal.classList.remove('active'); });
+    container.querySelector('#btn-close-view-modal-2').addEventListener('click', function() { viewModal.classList.remove('active'); });
+    viewModal.addEventListener('click', function(e) { if (e.target === viewModal) viewModal.classList.remove('active'); });
 
     renderTable();
 }
