@@ -267,10 +267,7 @@ function getFormData(container) {
         proveedor: container.querySelector('#input-proveedor').value || null,
         numero_factura: container.querySelector('#input-numero_factura').value || null,
         fecha_fabricacion: container.querySelector('#input-fecha_fabricacion').value || null,
-        estado: container.querySelector('#input-estado').value,
-        fecha_ultima_inspeccion: container.querySelector('#input-fecha_ultima_inspeccion').value || null,
-        resultado_inspeccion: container.querySelector('#input-resultado_inspeccion').value || null,
-        fecha_proxima_inspeccion: container.querySelector('#input-fecha_proxima_inspeccion').value || null
+        estado: container.querySelector('#input-estado').value
     };
 }
 
@@ -291,9 +288,6 @@ function setFormData(container, data) {
     container.querySelector('#input-numero_factura').value = data.numero_factura || '';
     container.querySelector('#input-fecha_fabricacion').value = data.fecha_fabricacion || '';
     container.querySelector('#input-estado').value = data.estado || 'Disponible';
-    container.querySelector('#input-fecha_ultima_inspeccion').value = data.fecha_ultima_inspeccion || '';
-    container.querySelector('#input-resultado_inspeccion').value = data.resultado_inspeccion || '';
-    container.querySelector('#input-fecha_proxima_inspeccion').value = data.fecha_proxima_inspeccion || '';
 }
 
 function resetForm(container) {

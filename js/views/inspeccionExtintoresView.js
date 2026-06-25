@@ -3,7 +3,6 @@ import { showModal, showConfirmModal } from '../components/modal.js';
 import { createDataTable } from '../components/dataTable.js';
 import { hasPermission } from '../auth.js';
 import { getParametros } from '../services/parametricaService.js';
-import { initDatePicker } from '../components/datePicker.js';
 import { 
   getAllInspecciones, 
   getInspeccionById, 
@@ -86,7 +85,7 @@ export async function renderInspeccionExtintores(container) {
                         </div>
                         <div class="form-group">
                             <label for="input-fecha" class="form-label">Fecha de Inspección</label>
-                            <input type="text" class="form-input" id="input-fecha" name="fecha" required readonly placeholder="Seleccione fecha...">
+                            <input type="date" class="form-input" id="input-fecha" name="fecha" required>
                         </div>
                         <div class="form-group">
                             <label for="input-inspector_nombre" class="form-label">Nombre del Inspector</label>
@@ -138,10 +137,6 @@ export async function renderInspeccionExtintores(container) {
 
     await loadParametricas(container);
     
-    // Initialize custom date picker
-    const fechaInput = container.querySelector('#input-fecha');
-    initDatePicker(fechaInput, null, 'YYYY-MM-DD');
-
     bindEvents(container);
     await refreshTable(container);
     resetForm(container);

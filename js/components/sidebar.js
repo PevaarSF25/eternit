@@ -42,10 +42,10 @@ const MENU_ITEMS = [
         icon: 'shield-check',
         isCollapse: true,
         children: [
-            { label: 'Inspección Extintores', hash: '#inspeccion-extintores', permission: 'VIEW_INSPECCION_EXTINTORES' },
-            { label: 'Inspección Arneses', hash: '#inspeccion-arneses', permission: 'VIEW_INSPECCION_ARNESES' },
-            { label: 'Inspección A/O', hash: '#inspeccion-ao', permission: 'VIEW_INSPECCION_AO' },
-            { label: 'Inspección Eslinga', hash: '#inspeccion-eslinga', permission: 'VIEW_INSPECCION_ESLINGA' }
+            { label: 'Extintores', hash: '#inspeccion-extintores', permission: 'VIEW_INSPECCION_EXTINTORES' },
+            { label: 'Arneses', hash: '#inspeccion-arneses', permission: 'VIEW_INSPECCION_ARNESES' },
+            { label: 'Eslinga', hash: '#inspeccion-eslinga', permission: 'VIEW_INSPECCION_ESLINGA' },
+            { label: 'Orden y Aseo Admin', hash: '#inspeccion-ao', permission: 'VIEW_INSPECCION_AO' }
         ]
     }
 ];
