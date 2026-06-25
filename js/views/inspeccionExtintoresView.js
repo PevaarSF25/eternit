@@ -51,7 +51,7 @@ export async function renderInspeccionExtintores(container) {
           </div>
           
           <button class="btn btn-primary btn-glow" id="btn-nuevo-registro" style="display:none; flex-shrink:0; white-space:nowrap; align-items:center; gap:6px; margin-left:auto;">
-            <i data-lucide="plus" style="width:16px;height:16px;"></i> Crear nueva inspección
+            <i data-lucide="plus" style="width:16px;height:16px;"></i> Nueva Inspección
           </button>
         </div>
       </div>

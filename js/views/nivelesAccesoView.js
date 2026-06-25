@@ -45,7 +45,9 @@ const PERMISSION_GROUPS = [
             { key: 'VIEW_INSPECCION_ARNESES', label: 'Ver — Inspección Arneses' },
             { key: 'EDIT_INSPECCION_ARNESES', label: 'Editar — Inspección Arneses' },
             { key: 'VIEW_INSPECCION_AO', label: 'Ver — Inspección A/O' },
-            { key: 'EDIT_INSPECCION_AO', label: 'Editar — Inspección A/O' }
+            { key: 'EDIT_INSPECCION_AO', label: 'Editar — Inspección A/O' },
+            { key: 'VIEW_INSPECCION_ESLINGA', label: 'Ver — Inspección Eslinga' },
+            { key: 'EDIT_INSPECCION_ESLINGA', label: 'Editar — Inspección Eslinga' }
         ]
     },
     {

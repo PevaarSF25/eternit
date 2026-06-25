@@ -48,6 +48,11 @@ const routes = {
     title: 'Inspección A/O',
     permission: 'VIEW_INSPECCION_AO'
   },
+  '#inspeccion-eslinga': {
+    loadView: () => import('./views/inspeccionEslingaView.js').then(m => m.renderInspeccionEslinga),
+    title: 'Inspección Eslinga',
+    permission: 'VIEW_INSPECCION_ESLINGA'
+  },
   '#seguridad-niveles': {
     loadView: () => import('./views/nivelesAccesoView.js').then(m => m.renderNivelesAcceso),
     title: 'Niveles de acceso',

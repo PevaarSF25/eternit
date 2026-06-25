@@ -34,7 +34,7 @@ const MENU_ITEMS = [
         isCollapse: true,
         children: [
             { label: 'Extintores', hash: '#inventario-extintores', permission: 'VIEW_INVENTARIO_EXTINTORES' },
-            { label: 'Arneses', hash: '#inventario-arneses', permission: 'VIEW_INVENTARIO_ARNESES' }
+            { label: 'Alturas', hash: '#inventario-arneses', permission: 'VIEW_INVENTARIO_ARNESES' }
         ]
     },
     {
@@ -44,7 +44,8 @@ const MENU_ITEMS = [
         children: [
             { label: 'Inspección Extintores', hash: '#inspeccion-extintores', permission: 'VIEW_INSPECCION_EXTINTORES' },
             { label: 'Inspección Arneses', hash: '#inspeccion-arneses', permission: 'VIEW_INSPECCION_ARNESES' },
-            { label: 'Inspección A/O', hash: '#inspeccion-ao', permission: 'VIEW_INSPECCION_AO' }
+            { label: 'Inspección A/O', hash: '#inspeccion-ao', permission: 'VIEW_INSPECCION_AO' },
+            { label: 'Inspección Eslinga', hash: '#inspeccion-eslinga', permission: 'VIEW_INSPECCION_ESLINGA' }
         ]
     }
 ];
