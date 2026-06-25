@@ -61,7 +61,7 @@ export async function renderInventarioExtintores(container) {
                             <label for="input-numero_serie" class="form-label">Número de Serie</label>
                             <input type="text" class="form-input" id="input-numero_serie" name="numero_serie" required placeholder="Ej: EXT-01">
                             <div id="estado-recepcion-form-badge" style="margin-top: 8px; display: none;">
-                                <span style="font-size: 10px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; display: block; margin-bottom: 2px;">Estado de Recepción</span>
+                                <span style="font-size: 10px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; display: block; margin-bottom: 2px;">Estado de Recarga</span>
                                 <span id="estado-recepcion-badge" style="display: inline-block; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 11px; text-transform: uppercase;"></span>
                             </div>
                         </div>

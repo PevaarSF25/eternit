@@ -120,23 +120,7 @@ export async function renderInventarioArneses(container) {
     + '</div>'
     + '</div>'
 
-    // ---- Card 5: Información de Inspecciones ----
-    + '<div class="card form-section" style="margin-bottom:var(--space-6)">'
-    + '<h3 class="form-section-title">Información de Inspecciones</h3>'
-    + '<div class="form-grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));">'
-    + '<div class="form-group"><label for="input-fecha_ultima_inspeccion" class="form-label">Fecha Última Inspección</label>'
-    + '<input type="text" class="form-input" id="input-fecha_ultima_inspeccion" name="fecha_ultima_inspeccion" readonly placeholder="Seleccione fecha..."></div>'
-    + '<div class="form-group"><label for="input-resultado_inspeccion" class="form-label">Resultado Inspección</label>'
-    + '<select class="form-select" id="input-resultado_inspeccion" name="resultado_inspeccion">'
-    + '<option value="" disabled selected>Seleccione...</option>'
-    + '<option value="Aprobado">Aprobado</option>'
-    + '<option value="Condicionado">Condicionado</option>'
-    + '<option value="Rechazado">Rechazado</option>'
-    + '</select></div>'
-    + '<div class="form-group"><label for="input-fecha_proxima_inspeccion" class="form-label">Fecha Próxima Inspección</label>'
-    + '<input type="text" class="form-input" id="input-fecha_proxima_inspeccion" name="fecha_proxima_inspeccion" readonly placeholder="Seleccione fecha..."></div>'
-    + '</div>'
-    + '</div>'
+    // Card 5: Información de Inspecciones - removed per user request
 
     + '<div class="form-actions" id="form-actions-container">'
     + '<button type="button" class="btn btn-secondary" id="btn-limpiar"><i data-lucide="refresh-cw"></i> Limpiar</button>'
@@ -164,8 +148,7 @@ export async function renderInventarioArneses(container) {
 
     initDatePicker(container.querySelector('#input-fecha_compra'), null, 'YYYY-MM-DD');
     initDatePicker(container.querySelector('#input-fecha_fabricacion'), null, 'YYYY-MM-DD');
-    initDatePicker(container.querySelector('#input-fecha_ultima_inspeccion'), null, 'YYYY-MM-DD');
-    initDatePicker(container.querySelector('#input-fecha_proxima_inspeccion'), null, 'YYYY-MM-DD');
+
 
     bindEvents(container);
     await refreshTable(container);
