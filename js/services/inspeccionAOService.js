@@ -1,4 +1,4 @@
-import { getSupabase } from './supabaseClient.js';
+import { getSupabase } from '../db/supabaseClient.js';
 
 const TABLA = 'inspeccion_ao';
 

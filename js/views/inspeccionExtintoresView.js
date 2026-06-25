@@ -598,15 +598,14 @@ async function refreshTable(container, forceFetch = false) {
 
     // ── Build rows HTML (only for current page) ───────────────────────────────
     let rowsHtml = '';
-    pageRows.forEach((insp, inspIdx) => {
+    pageRows.forEach((insp) => {
         const detalles = insp.extintores_detalle || [];
-        const borderTop = inspIdx > 0 ? '3px solid var(--border-default)' : 'none';
         const bgRow = 'var(--bg-surface)';
         const cellStyleHeader = `padding:10px; font-size:12px; color:var(--text-secondary); white-space:nowrap; vertical-align:middle; border-right:1px solid var(--border-light); border-bottom:1px solid var(--border-light);`;
 
         if (detalles.length === 0) {
             rowsHtml += `
-            <tr style="border-top:${borderTop}; background:${bgRow};">
+            <tr style="background:${bgRow};">
                 <td style="${cellStyleHeader} font-weight:600; color:var(--text-primary);">${insp.fecha || '\u2014'}</td>
                 <td style="${cellStyleHeader}">${insp.lugar_trabajo || '\u2014'}</td>
                 <td style="${cellStyleHeader}">${insp.inspector_nombre || '\u2014'}</td>
@@ -614,11 +613,10 @@ async function refreshTable(container, forceFetch = false) {
                 <td style="padding:10px; text-align:center; vertical-align:middle; border-bottom:1px solid var(--border-light);">${getActionButtons(insp.id)}</td>
             </tr>`;
         } else {
-            detalles.forEach((det, detIdx) => {
+            detalles.forEach((det) => {
                 const cellStyleDet = `padding:8px 10px; font-size:12px; color:var(--text-secondary); white-space:nowrap; border-bottom:1px solid var(--border-light); border-right:1px solid var(--border-light);`;
-                const isFirst = detIdx === 0;
                 rowsHtml += `
-                <tr style="${isFirst ? `border-top:${borderTop};` : ''} background:${bgRow};">
+                <tr style="background:${bgRow};">
                     <td style="${cellStyleHeader} font-weight:600; color:var(--text-primary);">${insp.fecha || '\u2014'}</td>
                     <td style="${cellStyleHeader}">${insp.lugar_trabajo || '\u2014'}</td>
                     <td style="${cellStyleHeader}">${insp.inspector_nombre || '\u2014'}</td>
