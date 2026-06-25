@@ -144,6 +144,10 @@ export async function renderInspeccionEslinga(container) {
                 <label class="form-label">Inspector</label>
                 <input type="text" class="form-input" id="esl-inspector" placeholder="Nombre del inspector">
               </div>
+              <div class="form-group">
+                <label class="form-label">Cargo</label>
+                <input type="text" class="form-input" id="esl-cargo" placeholder="Cargo del inspector">
+              </div>
             </div>
             <div style="margin-top:var(--space-4);">
               <label class="form-label" style="margin-bottom:var(--space-3); display:block;">Tipo de inspección *</label>
@@ -245,6 +249,7 @@ export async function renderInspeccionEslinga(container) {
     var form           = container.querySelector('#eslinga-form');
     var inputFecha     = container.querySelector('#esl-fecha');
     var inputInspector = container.querySelector('#esl-inspector');
+    var inputCargo     = container.querySelector('#esl-cargo');
     var selectEstado   = container.querySelector('#esl-estado');
     var searchInput    = container.querySelector('#table-search-input');
     var formActions    = container.querySelector('#form-actions');
@@ -410,6 +415,8 @@ export async function renderInspeccionEslinga(container) {
 
         inputInspector.readOnly = readonly;
         inputInspector.style.opacity = readonly ? '0.75' : '';
+        inputCargo.readOnly = readonly;
+        inputCargo.style.opacity = readonly ? '0.75' : '';
         selectEstado.disabled = readonly;
         selectEstado.style.opacity = readonly ? '0.75' : '';
 
@@ -537,6 +544,7 @@ export async function renderInspeccionEslinga(container) {
     function fillForm(record) {
         inputFecha.value = record.fecha || '';
         inputInspector.value = record.inspector || '';
+        inputCargo.value = record.cargo || '';
         selectEstado.value = record.estado || '';
 
         container.querySelectorAll('input[name="tipo_inspeccion"]').forEach(function(r) {
@@ -565,6 +573,7 @@ export async function renderInspeccionEslinga(container) {
         var payload = {
             fecha: fecha,
             inspector: inputInspector.value.trim() || null,
+            cargo: inputCargo.value.trim() || null,
             tipo_inspeccion: tipoRadio.value,
             evaluaciones: Object.assign({}, evalState),
             medidas: mediasRows,

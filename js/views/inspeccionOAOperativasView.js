@@ -1,60 +1,59 @@
 import { showToast } from '../components/toast.js';
 import { showConfirmModal } from '../components/modal.js';
 import { hasPermission } from '../auth.js';
-import { getParametros } from '../services/parametricaService.js';
+import { initDatePicker } from '../components/datePicker.js';
 import {
-    getAllInspeccionesAO,
-    createInspeccionAO,
-    updateInspeccionAO,
-    deleteInspeccionAO
-} from '../services/inspeccionAOService.js';
+    getAllInspeccionesOAOperativas,
+    createInspeccionOAOperativas,
+    updateInspeccionOAOperativas,
+    deleteInspeccionOAOperativas
+} from '../services/inspeccionOAOperativasService.js';
 
 const SECCIONES = [
     {
         num: 'I', titulo: 'SEGURIDAD',
         items: [
-            { key: 'seg_1', label: '¿La iluminación de los puestos de trabajo es suficiente para realizar tareas?' },
-            { key: 'seg_2', label: '¿Los enchufes se encuentran en buen estado y bien ubicados?' },
-            { key: 'seg_3', label: '¿Los cables eléctricos están en buen estado y protegidos?' },
-            { key: 'seg_4', label: '¿Las sillas y escritorios están en buen estado y permiten posturas adecuadas?' },
-            { key: 'seg_5', label: '¿Las ventanas cuentan con un sistema de apertura óptimo y los vidrios están en buen estado?' },
-            { key: 'seg_6', label: '¿Los peldaños de las escaleras están en buen estado y cuentan con antideslizantes?' },
-            { key: 'seg_7', label: '¿Las vías de evacuación y áreas están señalizadas?' },
-            { key: 'seg_8', label: '¿Los extintores y equipos de contra incendios están bien ubicados y señalizados?' }
+            { key: 's1', label: '¿Las vías de emergencia, ingresó o salida y equipos de emergencia están libres de obstáculos?' },
+            { key: 's2', label: '¿Cuenta el área con ventilación natural o mecánica?' },
+            { key: 's3', label: '¿Las herramientas y materiales de insumos están almacenados de manera ordenada?' },
+            { key: 's4', label: '¿Se cuentan con manuales de procedimientos para el trabajo que se realiza en el área?' },
+            { key: 's5', label: '¿Se realiza mantenimientos a las máquinas, equipos y herramientas?' },
+            { key: 's6', label: '¿Los toma corriente, extensiones eléctricas están en buen estado y debidamente identificados?' },
+            { key: 's7', label: '¿Se cuentan con extintores y estos son los adecuados para el material combustible presente en el área?' }
         ]
     },
     {
         num: 'II', titulo: 'ORDEN',
         items: [
-            { key: 'ord_1', label: '¿Las vías de evacuación y de circulación están libres de material innecesario que puedan obstruir o dificultar el paso de personas, máquinas o equipos?' },
-            { key: 'ord_2', label: '¿Los cajones y archivadores están en orden?' },
-            { key: 'ord_3', label: '¿Los escritorios están libres de acumulación innecesaria de papeles?' },
-            { key: 'ord_4', label: '¿Hay baños suficientes y están debidamente dotados?' },
-            { key: 'ord_5', label: '¿Los escritorios o puestos de trabajo están bien distribuidos y ordenados?' },
-            { key: 'ord_6', label: '¿Los techos se encuentran sin material innecesario (objetos colgantes, estructuras)?' }
+            { key: 'o1', label: '¿Se tienen identificados los estantes y productos almacenados?' },
+            { key: 'o2', label: '¿El espacio es suficiente para almacenar, no hay elementos regados ni tirados?' },
+            { key: 'o3', label: '¿Las vías de circulación están libres de material innecesario que puedan obstruir o dificultar el paso de personas, máquinas o equipos?' },
+            { key: 'o4', label: '¿Los recolectores de basura están identificados?' },
+            { key: 'o5', label: '¿La basura se clasifica de manera correcta?' },
+            { key: 'o6', label: '¿Se realiza la disposición inmediata de los desechos o residuos luego de terminar una actividad?' },
+            { key: 'o7', label: '¿Los productos químicos están identificados y un lugar definido?' }
         ]
     },
     {
         num: 'III', titulo: 'LIMPIEZA',
         items: [
-            { key: 'lim_1', label: '¿El baño de mujeres y hombres están limpios y óptimos para su utilización?' },
-            { key: 'lim_2', label: '¿Los equipos de oficina permanecen limpios?' },
-            { key: 'lim_3', label: '¿Los pisos están limpios, secos y sin desperdicios?' },
-            { key: 'lim_4', label: '¿Las paredes están libres de humedad y limpias?' },
-            { key: 'lim_5', label: '¿Los techos están limpios y libres de goteras?' },
-            { key: 'lim_6', label: '¿Se evidencia en el área que hay sistema de reciclaje?' }
+            { key: 'l1', label: '¿Los trabajadores se presentan con los uniformes limpios y en buen estado?' },
+            { key: 'l2', label: '¿Los baños están limpios y buenas condiciones?' },
+            { key: 'l3', label: '¿Los pisos están limpios, secos y sin desperdicios?' },
+            { key: 'l4', label: '¿Están libres de humedad, limpias las paredes?' },
+            { key: 'l5', label: '¿Los techos están limpios y libres de goteras?' },
+            { key: 'l6', label: '¿Las herramientas se guardan limpias y buenas condiciones?' }
         ]
     }
 ];
 
 const ALL_KEYS = SECCIONES.flatMap(function(s) { return s.items.map(function(i) { return i.key; }); });
 
-// val is 'B' | 'M' | 'NA'
 var _BASE_BTN = 'padding:5px 16px; border-radius:20px; border:1.5px solid; cursor:pointer; font-size:12px; font-weight:700; transition:all 0.15s; white-space:nowrap; line-height:1.4; display:inline-flex; align-items:center; min-width:44px; justify-content:center;';
 
 function getBtnStyle(val, isActive) {
-    if (val === 'B')  return _BASE_BTN + (isActive ? 'background:#22c55e;color:#fff;border-color:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,0.2);' : 'background:#f0fdf4;color:#16a34a;border-color:#bbf7d0;');
-    if (val === 'M')  return _BASE_BTN + (isActive ? 'background:#ef4444;color:#fff;border-color:#ef4444;box-shadow:0 0 0 2px rgba(239,68,68,0.2);' : 'background:#fef2f2;color:#dc2626;border-color:#fecaca;');
+    if (val === 'B')  return _BASE_BTN + (isActive ? 'background:#22c55e;color:#fff;border-color:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,0.2);'  : 'background:#f0fdf4;color:#16a34a;border-color:#bbf7d0;');
+    if (val === 'M')  return _BASE_BTN + (isActive ? 'background:#ef4444;color:#fff;border-color:#ef4444;box-shadow:0 0 0 2px rgba(239,68,68,0.2);'  : 'background:#fef2f2;color:#dc2626;border-color:#fecaca;');
     return _BASE_BTN + (isActive ? 'background:#6b7280;color:#fff;border-color:#6b7280;box-shadow:0 0 0 2px rgba(107,114,128,0.2);' : 'background:#f3f4f6;color:#4b5563;border-color:#e5e7eb;');
 }
 
@@ -71,33 +70,24 @@ function getActionButtons(id, canEdit) {
         + '</div>';
 }
 
-export async function renderInspeccionAO(container) {
+export async function renderInspeccionOAOperativas(container) {
     var evalState = {};
     var mediasRows = [];
     var currentId = null;
     var isReadOnly = false;
     var cachedData = null;
-    var ubicaciones = [];
-
-    var ubRes = await getParametros('extintor_ubicacion');
-    ubicaciones = (ubRes.data || []).map(function(p) { return p.valor; });
 
     container.innerHTML = `
-    <style>
-      .m-item::-webkit-outer-spin-button,
-      .m-item::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-      .m-item { -moz-appearance: textfield; }
-    </style>
     <div class="registro-container">
       <div class="registro-header" style="display:flex; flex-direction:column; align-items:stretch; gap:var(--space-4); margin-bottom:var(--space-6); width:100%;">
-        <h2>Inspección A/O</h2>
+        <h2>Inspección Orden y Aseo Operativas</h2>
         <div style="display:flex; align-items:center; width:100%; gap:12px; flex-wrap:wrap;">
-          <div class="search-wrapper" id="table-search-wrapper" style="position:relative; flex:0 1 400px;">
-            <input type="text" class="form-input" id="table-search-input" placeholder="Buscar por área, inspector, fecha..." style="width:100%; padding-left:40px; background-color:var(--bg-surface); border:1px solid var(--border-default);">
+          <div class="search-wrapper" style="position:relative; flex:0 1 400px;">
+            <input type="text" class="form-input" id="table-search-input" placeholder="Buscar por lugar, cargo, fecha..." style="width:100%; padding-left:40px; background-color:var(--bg-surface); border:1px solid var(--border-default);">
             <i data-lucide="search" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-muted); width:16px; height:16px; pointer-events:none;"></i>
           </div>
           <button class="btn btn-primary btn-glow" id="btn-nuevo-registro" style="display:none; flex-shrink:0; white-space:nowrap; align-items:center; gap:6px; margin-left:auto;">
-            <i data-lucide="plus" style="width:16px;height:16px;"></i> Nueva Inspección A/O
+            <i data-lucide="plus" style="width:16px;height:16px;"></i> Nueva Inspección
           </button>
         </div>
       </div>
@@ -120,62 +110,51 @@ export async function renderInspeccionAO(container) {
           </button>
         </div>
 
-        <form id="ao-form">
+        <form id="oao-form">
 
-          <!-- 1. General -->
+          <!-- Card 1: Información General -->
           <div class="card form-section" style="margin-bottom:var(--space-6);">
             <h3 class="form-section-title">1. Información General</h3>
             <div class="form-grid">
               <div class="form-group">
                 <label class="form-label">Fecha de inspección *</label>
-                <input type="date" class="form-input" id="ao-fecha" required>
+                <input type="text" class="form-input" id="oao-fecha" readonly placeholder="Seleccione fecha..." style="cursor:pointer;">
               </div>
               <div class="form-group">
-                <label class="form-label">Área</label>
-                <select class="form-input form-select" id="ao-area">
-                  <option value="">— Seleccionar —</option>
-                  ${ubicaciones.map(function(u) { return '<option value="' + u + '">' + u + '</option>'; }).join('')}
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Inspector</label>
-                <input type="text" class="form-input" id="ao-inspector" placeholder="Nombre del inspector">
+                <label class="form-label">Lugar o proyecto</label>
+                <input type="text" class="form-input" id="oao-lugar" placeholder="Lugar o proyecto">
               </div>
               <div class="form-group">
                 <label class="form-label">Cargo</label>
-                <input type="text" class="form-input" id="ao-cargo" placeholder="Cargo del inspector">
+                <input type="text" class="form-input" id="oao-cargo" placeholder="Cargo">
               </div>
-              <div class="form-group" style="grid-column: 1 / -1;">
+              <div class="form-group">
                 <label class="form-label">Personas inspeccionadas</label>
-                <input type="text" class="form-input" id="ao-personas" placeholder="Nombres de personas inspeccionadas">
+                <input type="text" class="form-input" id="oao-personas" placeholder="Nombres de personas inspeccionadas">
               </div>
             </div>
           </div>
 
-          <!-- 2. Evaluation table -->
+          <!-- Card 2: Evaluación -->
           <div class="card form-section" style="margin-bottom:var(--space-6); overflow-x:auto;">
             <h3 class="form-section-title" style="margin-bottom:var(--space-4);">2. Descripción de Aspectos a Evaluar</h3>
             <div id="eval-table-container"></div>
-          </div>
-
-          <!-- 3. Other observations -->
-          <div class="card form-section" style="margin-bottom:var(--space-6);">
-            <h3 class="form-section-title">3. Descripción de otra condición observada</h3>
-            <div class="form-group" style="margin-bottom:0;">
-              <textarea class="form-input" id="ao-otra-condicion" rows="4" placeholder="Describa aquí cualquier otra condición observada durante la inspección..." style="resize:vertical;"></textarea>
+            <div class="form-group" style="margin-top:var(--space-5); margin-bottom:0;">
+              <label class="form-label">Descripción de otra condición observada</label>
+              <textarea class="form-input" id="oao-otra-condicion" rows="4" placeholder="Describa aquí cualquier otra condición observada durante la inspección..." style="resize:vertical;"></textarea>
             </div>
           </div>
 
-          <!-- 4. Medidas de intervención -->
+          <!-- Card 3: Medidas de Intervención -->
           <div class="card form-section" style="margin-bottom:var(--space-6);">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--space-4);">
-              <h3 class="form-section-title" style="margin:0;">4. Medidas de Intervención</h3>
+              <h3 class="form-section-title" style="margin:0;">3. Medidas de Intervención</h3>
               <button type="button" id="btn-add-medida" class="btn btn-secondary" style="font-size:13px; display:flex; align-items:center; gap:6px;">
                 <i data-lucide="plus" style="width:14px;height:14px;"></i> Agregar medida
               </button>
             </div>
             <div style="overflow-x:auto;">
-              <table id="medidas-table" style="width:100%; border-collapse:collapse; font-size:13px; min-width:860px; table-layout:fixed;">
+              <table style="width:100%; border-collapse:collapse; font-size:13px; min-width:860px; table-layout:fixed;">
                 <colgroup>
                   <col style="width:80px;">
                   <col>
@@ -216,7 +195,7 @@ export async function renderInspeccionAO(container) {
 
     if (window.lucide) window.lucide.createIcons();
 
-    var canEdit = hasPermission('EDIT_INSPECCION_AO');
+    var canEdit = hasPermission('EDIT_INSPECCION_OA_OPERATIVAS');
 
     var viewTable      = container.querySelector('#view-table');
     var viewForm       = container.querySelector('#view-form');
@@ -228,24 +207,25 @@ export async function renderInspeccionAO(container) {
     var btnVolver      = container.querySelector('#btn-volver-tabla');
     var btnLimpiar     = container.querySelector('#btn-limpiar');
     var btnAddMedida   = container.querySelector('#btn-add-medida');
-    var form           = container.querySelector('#ao-form');
-    var inputFecha     = container.querySelector('#ao-fecha');
-    var selectArea     = container.querySelector('#ao-area');
-    var inputInspector = container.querySelector('#ao-inspector');
-    var inputCargo     = container.querySelector('#ao-cargo');
-    var inputPersonas  = container.querySelector('#ao-personas');
-    var inputOtra      = container.querySelector('#ao-otra-condicion');
+    var form           = container.querySelector('#oao-form');
+    var inputFecha     = container.querySelector('#oao-fecha');
+    var inputLugar     = container.querySelector('#oao-lugar');
+    var inputCargo     = container.querySelector('#oao-cargo');
+    var inputPersonas  = container.querySelector('#oao-personas');
+    var inputOtra      = container.querySelector('#oao-otra-condicion');
     var searchInput    = container.querySelector('#table-search-input');
     var formActions    = container.querySelector('#form-actions');
 
     if (canEdit) btnNuevo.style.display = 'inline-flex';
 
-    // ── Eval table (B / M / N/A) ───────────────────────────────────────────────
+    initDatePicker(inputFecha, null, 'YYYY-MM-DD');
+
+    // ── Eval table ─────────────────────────────────────────────────────────────
     function buildEvalTable() {
         var thStyle = 'padding:8px 12px; font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-secondary); border-bottom:2px solid var(--border-default); white-space:nowrap;';
         var html = '<table style="width:100%; border-collapse:collapse; font-size:13px;">'
             + '<thead><tr>'
-            + '<th style="' + thStyle + ' text-align:center; width:44px;">No</th>'
+            + '<th style="' + thStyle + ' text-align:center; width:50px;">No</th>'
             + '<th style="' + thStyle + '">DESCRIPCIÓN DE ASPECTOS A EVALUAR</th>'
             + '<th style="' + thStyle + ' text-align:center; width:72px;">B</th>'
             + '<th style="' + thStyle + ' text-align:center; width:72px;">M</th>'
@@ -255,17 +235,17 @@ export async function renderInspeccionAO(container) {
         var idx = 1;
         SECCIONES.forEach(function(sec) {
             html += '<tr style="background:rgba(var(--accent-rgb,59,130,246),0.06);">'
-                + '<td style="padding:8px 12px; font-weight:700; font-size:12px; color:var(--text-primary); border-bottom:1px solid var(--border-light); text-align:center;">' + sec.num + '</td>'
-                + '<td colspan="4" style="padding:8px 12px; font-weight:700; font-size:12px; letter-spacing:0.5px; color:var(--text-primary); border-bottom:1px solid var(--border-light);">' + sec.titulo + '</td>'
+                + '<td style="padding:8px 12px; font-weight:700; font-size:12px; color:var(--text-primary); border-bottom:1px solid var(--border-light); text-align:center; font-style:italic;">' + sec.num + '</td>'
+                + '<td colspan="4" style="padding:8px 12px; font-weight:700; font-size:12px; letter-spacing:0.3px; color:var(--text-primary); border-bottom:1px solid var(--border-light); font-style:italic;">' + sec.titulo + '</td>'
                 + '</tr>';
             sec.items.forEach(function(item) {
                 var td = 'padding:9px 12px; border-bottom:1px solid var(--border-light); vertical-align:middle;';
                 html += '<tr style="background:var(--bg-surface);">'
                     + '<td style="' + td + ' text-align:center; color:var(--text-muted); font-size:12px;">' + idx + '</td>'
                     + '<td style="' + td + ' color:var(--text-primary);">' + item.label + '</td>'
-                    + '<td style="' + td + ' text-align:center;"><button type="button" class="ao-eval-btn" data-key="' + item.key + '" data-val="B"  title="Buen estado"  style="' + getBtnStyle('B',  false) + '">B</button></td>'
-                    + '<td style="' + td + ' text-align:center;"><button type="button" class="ao-eval-btn" data-key="' + item.key + '" data-val="M"  title="Mal estado"   style="' + getBtnStyle('M',  false) + '">M</button></td>'
-                    + '<td style="' + td + ' text-align:center;"><button type="button" class="ao-eval-btn" data-key="' + item.key + '" data-val="NA" title="No aplica"    style="' + getBtnStyle('NA', false) + '">N/A</button></td>'
+                    + '<td style="' + td + ' text-align:center;"><button type="button" class="oao-eval-btn" data-key="' + item.key + '" data-val="B"  title="Buen estado" style="' + getBtnStyle('B',  false) + '">B</button></td>'
+                    + '<td style="' + td + ' text-align:center;"><button type="button" class="oao-eval-btn" data-key="' + item.key + '" data-val="M"  title="Mal estado" style="' + getBtnStyle('M',  false) + '">M</button></td>'
+                    + '<td style="' + td + ' text-align:center;"><button type="button" class="oao-eval-btn" data-key="' + item.key + '" data-val="NA" title="No aplica"   style="' + getBtnStyle('NA', false) + '">N/A</button></td>'
                     + '</tr>';
                 idx++;
             });
@@ -275,7 +255,7 @@ export async function renderInspeccionAO(container) {
         evalContainer.innerHTML = html;
 
         evalContainer.addEventListener('click', function(e) {
-            var btn = e.target.closest('.ao-eval-btn');
+            var btn = e.target.closest('.oao-eval-btn');
             if (!btn) return;
             var key = btn.dataset.key;
             var val = btn.dataset.val;
@@ -286,7 +266,7 @@ export async function renderInspeccionAO(container) {
 
     function updateEvalButtons(key) {
         var cur = evalState[key] || null;
-        evalContainer.querySelectorAll('.ao-eval-btn[data-key="' + key + '"]').forEach(function(btn) {
+        evalContainer.querySelectorAll('.oao-eval-btn[data-key="' + key + '"]').forEach(function(btn) {
             btn.style.cssText = getBtnStyle(btn.dataset.val, btn.dataset.val === cur);
         });
     }
@@ -332,13 +312,19 @@ export async function renderInspeccionAO(container) {
                     + '</td>'
                     + '<td style="' + tdStyle + '"><input type="text" class="m-desc" value="' + _esc(row.descripcion) + '" placeholder="Descripción del aspecto" style="' + _INPUT + '"' + ro + '></td>'
                     + '<td style="' + tdStyle + '"><input type="text" class="m-control" value="' + _esc(row.medida) + '" placeholder="Medida de control propuesta" style="' + _INPUT + '"' + ro + '></td>'
-                    + '<td style="' + tdStyle + '"><input type="date" class="m-fecha" value="' + (row.fecha || '') + '" style="' + _INPUT + '"' + ro + '></td>'
+                    + '<td style="' + tdStyle + '"><input type="text" class="m-fecha" value="' + _esc(row.fecha) + '" placeholder="Seleccione fecha..." style="' + _INPUT + (readonly ? '' : ' cursor:pointer;') + '" readonly></td>'
                     + '<td style="' + tdStyle + '"><input type="text" class="m-resp" value="' + _esc(row.responsable) + '" placeholder="Responsable" style="' + _INPUT + '"' + ro + '></td>'
                     + '<td style="' + tdStyle + ' text-align:center;">'
                     + (readonly ? '' : '<button type="button" class="btn-del-medida" data-idx="' + i + '" title="Eliminar" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:6px;width:28px;height:28px;cursor:pointer;color:#ef4444;font-size:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center;">×</button>')
                     + '</td>'
                     + '</tr>';
             }).join('');
+        }
+
+        if (!readonly) {
+            medidasTbody.querySelectorAll('.m-fecha').forEach(function(el) {
+                initDatePicker(el, null, 'YYYY-MM-DD');
+            });
         }
 
         medidasTbody.querySelectorAll('.btn-del-medida').forEach(function(btn) {
@@ -374,14 +360,12 @@ export async function renderInspeccionAO(container) {
         viewTable.style.display = 'none';
         viewForm.style.display = 'block';
 
-        [inputFecha, inputInspector, inputCargo, inputPersonas, inputOtra].forEach(function(el) {
+        [inputLugar, inputCargo, inputPersonas, inputOtra].forEach(function(el) {
             el.readOnly = readonly;
             el.style.opacity = readonly ? '0.75' : '';
         });
-        selectArea.disabled = readonly;
-        selectArea.style.opacity = readonly ? '0.75' : '';
 
-        evalContainer.querySelectorAll('.ao-eval-btn').forEach(function(b) {
+        evalContainer.querySelectorAll('.oao-eval-btn').forEach(function(b) {
             b.disabled = readonly;
             b.style.cursor = readonly ? 'default' : 'pointer';
         });
@@ -396,8 +380,7 @@ export async function renderInspeccionAO(container) {
     function resetForm() {
         currentId = null;
         form.reset();
-        inputFecha.value = new Date().toISOString().slice(0, 10);
-        selectArea.value = '';
+        inputFecha.value = '';
         evalState = {};
         ALL_KEYS.forEach(updateEvalButtons);
         mediasRows = [];
@@ -408,7 +391,7 @@ export async function renderInspeccionAO(container) {
     async function refreshTable() {
         tableContainer.innerHTML = '<div style="text-align:center; padding:48px; color:var(--text-secondary);"><div class="spinner"></div></div>';
 
-        var res = await getAllInspeccionesAO();
+        var res = await getAllInspeccionesOAOperativas();
         if (res.error) {
             tableContainer.innerHTML = '<p style="color:var(--danger); padding:16px;">Error al cargar: ' + res.error.message + '</p>';
             return;
@@ -419,8 +402,8 @@ export async function renderInspeccionAO(container) {
         var filtered = query
             ? cachedData.filter(function(r) {
                 return (r.fecha || '').includes(query)
-                    || (r.area || '').toLowerCase().includes(query)
-                    || (r.inspector || '').toLowerCase().includes(query);
+                    || (r.lugar || '').toLowerCase().includes(query)
+                    || (r.cargo || '').toLowerCase().includes(query);
             })
             : cachedData;
 
@@ -445,8 +428,8 @@ export async function renderInspeccionAO(container) {
                 + '</div>';
             return '<tr style="background:var(--bg-surface);">'
                 + '<td style="' + tdStyle + ' font-weight:600; color:var(--text-primary);">' + (r.fecha || '—') + '</td>'
-                + '<td style="' + tdStyle + '">' + (r.area || '—') + '</td>'
-                + '<td style="' + tdStyle + '">' + (r.inspector || '—') + '</td>'
+                + '<td style="' + tdStyle + '">' + (r.lugar || '—') + '</td>'
+                + '<td style="' + tdStyle + '">' + (r.cargo || '—') + '</td>'
                 + '<td style="padding:10px 12px; border-bottom:1px solid var(--border-light); vertical-align:middle;">' + scoreHtml + '</td>'
                 + '<td style="padding:10px 12px; text-align:center; border-bottom:1px solid var(--border-light); vertical-align:middle;">' + getActionButtons(r.id, canEdit) + '</td>'
                 + '</tr>';
@@ -456,8 +439,8 @@ export async function renderInspeccionAO(container) {
             + '<table style="width:100%; border-collapse:collapse;">'
             + '<thead><tr>'
             + '<th style="' + thStyle + '">FECHA</th>'
-            + '<th style="' + thStyle + '">ÁREA</th>'
-            + '<th style="' + thStyle + '">INSPECTOR</th>'
+            + '<th style="' + thStyle + '">LUGAR / PROYECTO</th>'
+            + '<th style="' + thStyle + '">CARGO</th>'
             + '<th style="' + thStyle + '">RESUMEN</th>'
             + '<th style="' + thStyle + ' text-align:center; width:120px;">ACCIONES</th>'
             + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
@@ -483,7 +466,7 @@ export async function renderInspeccionAO(container) {
             } else if (action === 'delete') {
                 var ok = await showConfirmModal('Eliminar inspección', '¿Seguro que deseas eliminar esta inspección? Esta acción no se puede deshacer.');
                 if (!ok) return;
-                var delRes = await deleteInspeccionAO(id);
+                var delRes = await deleteInspeccionOAOperativas(id);
                 if (delRes.error) { showToast('Error al eliminar: ' + delRes.error.message, 'error'); return; }
                 cachedData = null;
                 showToast('Inspección eliminada', 'success');
@@ -493,18 +476,11 @@ export async function renderInspeccionAO(container) {
     }
 
     function fillForm(record) {
-        inputFecha.value = record.fecha || '';
-        var areaVal = record.area || '';
-        if (areaVal && !Array.from(selectArea.options).some(function(o) { return o.value === areaVal; })) {
-            var opt = document.createElement('option');
-            opt.value = areaVal; opt.textContent = areaVal;
-            selectArea.appendChild(opt);
-        }
-        selectArea.value = areaVal;
-        inputInspector.value = record.inspector || '';
-        inputCargo.value     = record.cargo || '';
-        inputPersonas.value  = record.personas_inspeccionadas || '';
-        inputOtra.value      = record.descripcion_otra_condicion || '';
+        inputFecha.value    = record.fecha || '';
+        inputLugar.value    = record.lugar || '';
+        inputCargo.value    = record.cargo || '';
+        inputPersonas.value = record.personas_inspeccionadas || '';
+        inputOtra.value     = record.descripcion_otra_condicion || '';
         setEvalState(record.evaluaciones || {});
         mediasRows = Array.isArray(record.medidas) ? record.medidas.slice() : [];
         renderMedidasTable(false);
@@ -516,14 +492,13 @@ export async function renderInspeccionAO(container) {
         if (isReadOnly) return;
 
         var fecha = inputFecha.value;
-        if (!fecha) { showToast('La fecha es obligatoria', 'error'); inputFecha.focus(); return; }
+        if (!fecha) { showToast('La fecha es obligatoria', 'error'); return; }
 
         saveMedidasFromDOM();
 
         var payload = {
             fecha: fecha,
-            area: selectArea.value || null,
-            inspector: inputInspector.value.trim() || null,
+            lugar: inputLugar.value.trim() || null,
             cargo: inputCargo.value.trim() || null,
             personas_inspeccionadas: inputPersonas.value.trim() || null,
             evaluaciones: Object.assign({}, evalState),
@@ -537,8 +512,8 @@ export async function renderInspeccionAO(container) {
 
         try {
             var res = currentId
-                ? await updateInspeccionAO(currentId, payload)
-                : await createInspeccionAO(payload);
+                ? await updateInspeccionOAOperativas(currentId, payload)
+                : await createInspeccionOAOperativas(payload);
             if (res.error) { showToast('Error: ' + res.error.message, 'error'); return; }
             cachedData = null;
             showToast(currentId ? 'Inspección actualizada' : 'Inspección guardada', 'success');
@@ -561,6 +536,5 @@ export async function renderInspeccionAO(container) {
         searchTimeout = setTimeout(refreshTable, 300);
     });
 
-    inputFecha.value = new Date().toISOString().slice(0, 10);
     showTable();
 }

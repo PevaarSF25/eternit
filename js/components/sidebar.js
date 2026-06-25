@@ -45,6 +45,7 @@ const MENU_ITEMS = [
             { label: 'Extintores', hash: '#inspeccion-extintores', permission: 'VIEW_INSPECCION_EXTINTORES' },
             { label: 'Arneses', hash: '#inspeccion-arneses', permission: 'VIEW_INSPECCION_ARNESES' },
             { label: 'Eslinga', hash: '#inspeccion-eslinga', permission: 'VIEW_INSPECCION_ESLINGA' },
+            { label: 'Orden y Aseo Operativas', hash: '#inspeccion-oa-operativas', permission: 'VIEW_INSPECCION_OA_OPERATIVAS' },
             { label: 'Orden y Aseo Admin', hash: '#inspeccion-ao', permission: 'VIEW_INSPECCION_AO' }
         ]
     }
