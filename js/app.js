@@ -55,6 +55,7 @@ const routes = {
   }
 };
 
+let currentNavigationToken = 0;
 let currentViewDestroy = null;
 
 async function navigateTo(hash) {
@@ -65,6 +66,9 @@ async function navigateTo(hash) {
     window.location.hash = hash;
     return;
   }
+
+  currentNavigationToken++;
+  const thisToken = currentNavigationToken;
 
   const route = routes[hash];
   const mainContent = document.getElementById('main-content');
@@ -103,9 +107,64 @@ async function navigateTo(hash) {
     }
 
     const renderFn = await route.loadView();
-    currentViewDestroy = await renderFn(mainContent);
+
+    // Check if navigation has changed during import
+    if (thisToken !== currentNavigationToken) {
+      return;
+    }
+
+    // Create a dedicated container for this view
+    const viewContainer = document.createElement('div');
+    viewContainer.style.width = '100%';
+    viewContainer.style.height = '100%';
+
+    // Wrap the container in a Proxy to detect and abort obsolete rendering
+    const proxyContainer = new Proxy(viewContainer, {
+      get(target, prop) {
+        if (thisToken !== currentNavigationToken) {
+          throw new Error('NavigationAborted');
+        }
+        const val = target[prop];
+        if (typeof val === 'function') {
+          return val.bind(target);
+        }
+        return val;
+      },
+      set(target, prop, value) {
+        if (thisToken !== currentNavigationToken) {
+          throw new Error('NavigationAborted');
+        }
+        target[prop] = value;
+        return true;
+      }
+    });
+
+    // Successfully loaded layout container, attach it to mainContent before rendering so document.getElementById queries succeed
+    mainContent.innerHTML = '';
+    mainContent.appendChild(viewContainer);
+
+    const destroyFn = await renderFn(proxyContainer);
+
+    // If navigation changed while rendering, clean up and exit
+    if (thisToken !== currentNavigationToken) {
+      if (destroyFn && typeof destroyFn === 'function') {
+        destroyFn();
+      }
+      return;
+    }
+
+    // Scan for icons in the newly appended view container
+    if (window.lucide) {
+      window.lucide.createIcons({ nodes: [viewContainer] });
+    }
+
+    currentViewDestroy = destroyFn;
 
   } catch (error) {
+    if (error.message === 'NavigationAborted') {
+      // Ignored silently as this navigation is obsolete
+      return;
+    }
     console.error('Error loading view:', error);
     mainContent.innerHTML = `
       <div class="card" style="border-color:var(--color-danger)">
