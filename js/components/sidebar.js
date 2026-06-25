@@ -43,7 +43,8 @@ const MENU_ITEMS = [
         isCollapse: true,
         children: [
             { label: 'Inspección Extintores', hash: '#inspeccion-extintores', permission: 'VIEW_INSPECCION_EXTINTORES' },
-            { label: 'Inspección Arneses', hash: '#inspeccion-arneses', permission: 'VIEW_INSPECCION_ARNESES' }
+            { label: 'Inspección Arneses', hash: '#inspeccion-arneses', permission: 'VIEW_INSPECCION_ARNESES' },
+            { label: 'Inspección A/O', hash: '#inspeccion-ao', permission: 'VIEW_INSPECCION_AO' }
         ]
     }
 ];

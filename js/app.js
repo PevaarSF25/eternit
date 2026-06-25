@@ -43,6 +43,11 @@ const routes = {
     title: 'Inspección Arneses',
     permission: 'VIEW_INSPECCION_ARNESES'
   },
+  '#inspeccion-ao': {
+    loadView: () => import('./views/inspeccionAOView.js').then(m => m.renderInspeccionAO),
+    title: 'Inspección A/O',
+    permission: 'VIEW_INSPECCION_AO'
+  },
   '#seguridad-niveles': {
     loadView: () => import('./views/nivelesAccesoView.js').then(m => m.renderNivelesAcceso),
     title: 'Niveles de acceso',

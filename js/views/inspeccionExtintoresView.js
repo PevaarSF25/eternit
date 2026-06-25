@@ -601,7 +601,7 @@ async function refreshTable(container, forceFetch = false) {
     pageRows.forEach((insp, inspIdx) => {
         const detalles = insp.extintores_detalle || [];
         const borderTop = inspIdx > 0 ? '3px solid var(--border-default)' : 'none';
-        const bgRow = inspIdx % 2 === 0 ? 'var(--bg-surface)' : 'rgba(148,163,184,0.04)';
+        const bgRow = 'var(--bg-surface)';
         const cellStyleHeader = `padding:10px; font-size:12px; color:var(--text-secondary); white-space:nowrap; vertical-align:middle; border-right:1px solid var(--border-light); border-bottom:1px solid var(--border-light);`;
 
         if (detalles.length === 0) {
@@ -623,10 +623,7 @@ async function refreshTable(container, forceFetch = false) {
                     <td style="${cellStyleHeader}">${insp.lugar_trabajo || '\u2014'}</td>
                     <td style="${cellStyleHeader}">${insp.inspector_nombre || '\u2014'}</td>
                     <td style="${cellStyleDet} font-weight:600; color:var(--text-primary);">
-                        <span style="display:inline-flex;align-items:center;gap:6px;">
-                            <span style="font-size:10px;color:var(--text-muted);">#${detIdx + 1}</span>
-                            ${det.codigo || '\u2014'}
-                        </span>
+                        ${det.codigo || '\u2014'}
                     </td>
                     <td style="${cellStyleDet}">${det.tipo || '\u2014'}</td>
                     <td style="${cellStyleDet}">${det.capacidad || '\u2014'}</td>
@@ -669,7 +666,7 @@ async function refreshTable(container, forceFetch = false) {
                         <th style="${thStyle}">FECHA</th>
                         <th style="${thStyle}">LUGAR DE TRABAJO</th>
                         <th style="${thStyle}">INSPECTOR</th>
-                        <th style="${thStyle}">C\u00d3DIGO / #</th>
+                        <th style="${thStyle}">C\u00d3DIGO</th>
                         <th style="${thStyle}">TIPO</th>
                         <th style="${thStyle}">CAPACIDAD</th>
                         <th style="${thStyle}">ESTADO RECARGA</th>

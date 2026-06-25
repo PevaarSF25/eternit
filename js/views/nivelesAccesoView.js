@@ -43,7 +43,9 @@ const PERMISSION_GROUPS = [
             { key: 'VIEW_INSPECCION_EXTINTORES', label: 'Ver — Inspección Extintores' },
             { key: 'EDIT_INSPECCION_EXTINTORES', label: 'Editar — Inspección Extintores' },
             { key: 'VIEW_INSPECCION_ARNESES', label: 'Ver — Inspección Arneses' },
-            { key: 'EDIT_INSPECCION_ARNESES', label: 'Editar — Inspección Arneses' }
+            { key: 'EDIT_INSPECCION_ARNESES', label: 'Editar — Inspección Arneses' },
+            { key: 'VIEW_INSPECCION_AO', label: 'Ver — Inspección A/O' },
+            { key: 'EDIT_INSPECCION_AO', label: 'Editar — Inspección A/O' }
         ]
     },
     {
