@@ -582,8 +582,23 @@ async function refreshTable(container, forceFetch = false) {
         if (window.lucide) window.lucide.createIcons({ nodes: [tableContainer] });
         return;
     }
+
+    // ── Pagination state ──────────────────────────────────────────────────────
+    const PAGE_SIZE = 50;
+    const totalItems = displayRows.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+
+    // Use a stable current page stored on the container so it survives re-renders triggered by search
+    if (!container._extInspPage || container._extInspPage > totalPages) container._extInspPage = 1;
+    const currentPage = container._extInspPage;
+
+    const pageStart = (currentPage - 1) * PAGE_SIZE;
+    const pageEnd   = Math.min(pageStart + PAGE_SIZE, totalItems);
+    const pageRows  = displayRows.slice(pageStart, pageEnd);
+
+    // ── Build rows HTML (only for current page) ───────────────────────────────
     let rowsHtml = '';
-    displayRows.forEach((insp, inspIdx) => {
+    pageRows.forEach((insp, inspIdx) => {
         const detalles = insp.extintores_detalle || [];
         const borderTop = inspIdx > 0 ? '3px solid var(--border-default)' : 'none';
         const bgRow = inspIdx % 2 === 0 ? 'var(--bg-surface)' : 'rgba(148,163,184,0.04)';
@@ -624,6 +639,28 @@ async function refreshTable(container, forceFetch = false) {
 
     const thStyle = 'padding:8px 10px; text-align:left; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-secondary); border-bottom:1px solid var(--border-default); white-space:nowrap;';
 
+    // ── Pagination controls ───────────────────────────────────────────────────
+    const paginationHtml = totalPages > 1 ? `
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:var(--bg-surface); border-top:1px solid var(--border-default); border-radius:0 0 12px 12px; flex-wrap:wrap; gap:8px;">
+            <span style="font-size:12px; color:var(--text-secondary);">
+                Mostrando ${pageStart + 1}–${pageEnd} de ${totalItems} inspecciones
+            </span>
+            <div style="display:flex; gap:6px; align-items:center;">
+                <button data-ext-insp-page="${currentPage - 1}" ${currentPage <= 1 ? 'disabled' : ''}
+                    style="padding:6px 12px; border-radius:6px; border:1px solid var(--border-default); background:var(--bg-surface); color:var(--text-secondary); cursor:${currentPage <= 1 ? 'not-allowed' : 'pointer'}; font-size:12px; display:flex; align-items:center; gap:4px; opacity:${currentPage <= 1 ? '0.4' : '1'};">
+                    <i data-lucide="chevron-left" style="width:14px;height:14px;"></i> Anterior
+                </button>
+                <span style="font-size:12px; color:var(--text-primary); font-weight:600; padding:0 8px;">
+                    Página ${currentPage} de ${totalPages}
+                </span>
+                <button data-ext-insp-page="${currentPage + 1}" ${currentPage >= totalPages ? 'disabled' : ''}
+                    style="padding:6px 12px; border-radius:6px; border:1px solid var(--border-default); background:var(--bg-surface); color:var(--text-secondary); cursor:${currentPage >= totalPages ? 'not-allowed' : 'pointer'}; font-size:12px; display:flex; align-items:center; gap:4px; opacity:${currentPage >= totalPages ? '0.4' : '1'};">
+                    Siguiente <i data-lucide="chevron-right" style="width:14px;height:14px;"></i>
+                </button>
+            </div>
+        </div>
+    ` : '';
+
     tableContainer.innerHTML = `
         <div style="overflow-x:auto; border-radius:12px; border:1px solid var(--border-default); background:var(--bg-surface);">
             <table style="width:100%; border-collapse:collapse; font-family:'Inter',sans-serif;">
@@ -641,12 +678,25 @@ async function refreshTable(container, forceFetch = false) {
                 </thead>
                 <tbody>${rowsHtml}</tbody>
             </table>
+            ${paginationHtml}
         </div>`;
 
     if (window.lucide) window.lucide.createIcons({ nodes: [tableContainer] });
 
-    // Delegation for action buttons
+    // Delegation for action buttons and pagination
     tableContainer.addEventListener('click', async (e) => {
+        // ── Pagination buttons ──────────────────────────────────────────────
+        const pageBtn = e.target.closest('[data-ext-insp-page]');
+        if (pageBtn && !pageBtn.disabled) {
+            const newPage = parseInt(pageBtn.dataset.extInspPage, 10);
+            if (newPage >= 1 && newPage <= totalPages) {
+                container._extInspPage = newPage;
+                await refreshTable(container, false);
+            }
+            return;
+        }
+
+        // ── Action buttons ──────────────────────────────────────────────────
         const btn = e.target.closest('[data-action]');
         if (!btn) return;
         const action = btn.dataset.action;
@@ -665,6 +715,7 @@ async function refreshTable(container, forceFetch = false) {
                 if (delRes.error) showToast('Error al eliminar', 'error');
                 else {
                     showToast('Inspecci\u00f3n eliminada', 'success');
+                    container._extInspPage = 1;
                     await refreshTable(container, true);
                 }
             }

@@ -827,7 +827,7 @@ async function refreshTable(container, force = false) {
         containerId: 'table-container',
         columns: columns,
         data: processedData,
-        pageSize: 10,
+        pageSize: 50,
         onView: async (record) => {
             await openRecordForEdit(container, record.id, true);
         },

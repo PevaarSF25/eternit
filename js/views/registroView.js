@@ -1051,6 +1051,7 @@ async function refreshTable(container, forceFetch = false) {
       columns,
       data: displayRows,
       footerRow,
+      pageSize: 50,
       onView: (record) => {
         if (record.isContratistaAcumulado || record.isSubtotal) return;
         loadRecordIntoForm(container, record);
@@ -1175,6 +1176,7 @@ async function refreshTable(container, forceFetch = false) {
       columns,
       data: recordsWithSubtotals,
       footerRow,
+      pageSize: 50,
       onView: (record) => {
         loadRecordIntoForm(container, record);
         setReadOnly(container, true);

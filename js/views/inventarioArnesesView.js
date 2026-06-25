@@ -408,7 +408,7 @@ async function refreshTable(container, force) {
         containerId: 'table-container',
         columns: columns,
         data: filteredData,
-        pageSize: 10,
+        pageSize: 50,
         onView: async function(record) {
             currentRecordId = record.id;
             setFormData(container, record);
