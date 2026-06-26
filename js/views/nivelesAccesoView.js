@@ -49,7 +49,11 @@ const PERMISSION_GROUPS = [
             { key: 'VIEW_INSPECCION_ESLINGA', label: 'Ver — Inspección Eslinga' },
             { key: 'EDIT_INSPECCION_ESLINGA', label: 'Editar — Inspección Eslinga' },
             { key: 'VIEW_INSPECCION_OA_OPERATIVAS', label: 'Ver — Inspección O&A Operativas' },
-            { key: 'EDIT_INSPECCION_OA_OPERATIVAS', label: 'Editar — Inspección O&A Operativas' }
+            { key: 'EDIT_INSPECCION_OA_OPERATIVAS', label: 'Editar — Inspección O&A Operativas' },
+            { key: 'VIEW_INSPECCION_VEHICULOS', label: 'Ver — Inspección Vehículos' },
+            { key: 'EDIT_INSPECCION_VEHICULOS', label: 'Editar — Inspección Vehículos' },
+            { key: 'VIEW_INSPECCION_HERRAMIENTAS', label: 'Ver — Inspección Herramientas Manuales' },
+            { key: 'EDIT_INSPECCION_HERRAMIENTAS', label: 'Editar — Inspección Herramientas Manuales' }
         ]
     },
     {

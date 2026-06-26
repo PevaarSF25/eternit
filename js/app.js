@@ -53,6 +53,16 @@ const routes = {
     title: 'Inspección Eslinga',
     permission: 'VIEW_INSPECCION_ESLINGA'
   },
+  '#inspeccion-vehiculos': {
+    loadView: () => import('./views/inspeccionVehiculosView.js').then(m => m.renderInspeccionVehiculos),
+    title: 'Inspección Vehículos',
+    permission: 'VIEW_INSPECCION_VEHICULOS'
+  },
+  '#inspeccion-herramientas': {
+    loadView: () => import('./views/inspeccionHerramientasView.js').then(m => m.renderInspeccionHerramientas),
+    title: 'Inspección Herramientas Manuales',
+    permission: 'VIEW_INSPECCION_HERRAMIENTAS'
+  },
   '#inspeccion-oa-operativas': {
     loadView: () => import('./views/inspeccionOAOperativasView.js').then(m => m.renderInspeccionOAOperativas),
     title: 'Inspección Orden y Aseo Operativas',

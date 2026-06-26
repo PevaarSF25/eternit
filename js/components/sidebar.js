@@ -46,7 +46,9 @@ const MENU_ITEMS = [
             { label: 'Arneses', hash: '#inspeccion-arneses', permission: 'VIEW_INSPECCION_ARNESES' },
             { label: 'Eslinga', hash: '#inspeccion-eslinga', permission: 'VIEW_INSPECCION_ESLINGA' },
             { label: 'Orden y Aseo Operativas', hash: '#inspeccion-oa-operativas', permission: 'VIEW_INSPECCION_OA_OPERATIVAS' },
-            { label: 'Orden y Aseo Admin', hash: '#inspeccion-ao', permission: 'VIEW_INSPECCION_AO' }
+            { label: 'Orden y Aseo Admin', hash: '#inspeccion-ao', permission: 'VIEW_INSPECCION_AO' },
+            { label: 'Vehículos', hash: '#inspeccion-vehiculos', permission: 'VIEW_INSPECCION_VEHICULOS' },
+            { label: 'Herramientas Manuales', hash: '#inspeccion-herramientas', permission: 'VIEW_INSPECCION_HERRAMIENTAS' }
         ]
     }
 ];
