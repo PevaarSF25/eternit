@@ -1,6 +1,7 @@
 import { showToast } from '../components/toast.js';
 import { showConfirmModal } from '../components/modal.js';
 import { hasPermission } from '../auth.js';
+import { initDatePicker } from '../components/datePicker.js';
 import {
     getAllInspeccionesVehiculos,
     createInspeccionVehiculos,
@@ -179,11 +180,13 @@ export async function renderInspeccionVehiculos(container) {
         + '<h3 class="form-section-title">1. Información General</h3>'
         + '<div class="form-grid">'
         + '<div class="form-group"><label class="form-label">Fecha de inspección *</label>'
-        + '<input type="date" class="form-input" id="veh-fecha" required></div>'
+        + '<input type="text" class="form-input" id="veh-fecha" readonly placeholder="Seleccione fecha..." style="cursor:pointer;"></div>'
         + '<div class="form-group"><label class="form-label">Nombre del conductor</label>'
         + '<input type="text" class="form-input" id="veh-conductor" placeholder="Nombre del conductor"></div>'
+        + '<div class="form-group"><label class="form-label">Cargo</label>'
+        + '<input type="text" class="form-input" id="veh-cargo" placeholder="Cargo"></div>'
         + '<div class="form-group"><label class="form-label">Fecha próxima inspección</label>'
-        + '<input type="date" class="form-input" id="veh-fecha-proxima"></div>'
+        + '<input type="text" class="form-input" id="veh-fecha-proxima" readonly placeholder="Seleccione fecha..." style="cursor:pointer;"></div>'
         + '</div>'
         + '</div>'
 
@@ -275,6 +278,7 @@ export async function renderInspeccionVehiculos(container) {
     var form           = container.querySelector('#veh-form');
     var inputFecha     = container.querySelector('#veh-fecha');
     var inputConductor = container.querySelector('#veh-conductor');
+    var inputCargo     = container.querySelector('#veh-cargo');
     var inputFechaProx = container.querySelector('#veh-fecha-proxima');
     var inputTipo      = container.querySelector('#veh-tipo');
     var inputMarca     = container.querySelector('#veh-marca');
@@ -287,6 +291,9 @@ export async function renderInspeccionVehiculos(container) {
     var formActions    = container.querySelector('#form-actions');
 
     if (canEdit) btnNuevo.style.display = 'inline-flex';
+
+    initDatePicker(inputFecha, null, 'YYYY-MM-DD');
+    initDatePicker(inputFechaProx, null, 'YYYY-MM-DD');
 
     // ── Eval table (B / M / N/A) ───────────────────────────────────────────────
     function buildEvalTable() {
@@ -379,13 +386,19 @@ export async function renderInspeccionVehiculos(container) {
                     + '</td>'
                     + '<td style="' + tdStyle + '"><input type="text" class="mv-desc" value="' + _esc(row.descripcion) + '" placeholder="Descripción del aspecto" style="' + _INPUT + '"' + ro + '></td>'
                     + '<td style="' + tdStyle + '"><input type="text" class="mv-control" value="' + _esc(row.medida) + '" placeholder="Medida de control propuesta" style="' + _INPUT + '"' + ro + '></td>'
-                    + '<td style="' + tdStyle + '"><input type="date" class="mv-fecha" value="' + (row.fecha || '') + '" style="' + _INPUT + '"' + ro + '></td>'
+                    + '<td style="' + tdStyle + '"><input type="text" class="mv-fecha" value="' + _esc(row.fecha) + '" placeholder="Seleccione fecha..." style="' + _INPUT + (readonly ? '' : ' cursor:pointer;') + '" readonly></td>'
                     + '<td style="' + tdStyle + '"><input type="text" class="mv-resp" value="' + _esc(row.responsable) + '" placeholder="Responsable" style="' + _INPUT + '"' + ro + '></td>'
                     + '<td style="' + tdStyle + ' text-align:center;">'
                     + (readonly ? '' : '<button type="button" class="btn-del-medida" data-idx="' + i + '" title="Eliminar" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:6px;width:28px;height:28px;cursor:pointer;color:#ef4444;font-size:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center;">×</button>')
                     + '</td>'
                     + '</tr>';
             }).join('');
+        }
+
+        if (!readonly) {
+            medidasTbody.querySelectorAll('.mv-fecha').forEach(function(el) {
+                initDatePicker(el, null, 'YYYY-MM-DD');
+            });
         }
 
         medidasTbody.querySelectorAll('.btn-del-medida').forEach(function(btn) {
@@ -417,7 +430,7 @@ export async function renderInspeccionVehiculos(container) {
         viewTable.style.display = 'none';
         viewForm.style.display = 'block';
 
-        var textInputs = [inputFecha, inputConductor, inputFechaProx, inputTipo, inputMarca,
+        var textInputs = [inputConductor, inputCargo, inputTipo, inputMarca,
                           inputModelo, inputNoInterno, inputKm, inputProyecto, inputOtro];
         textInputs.forEach(function(el) {
             el.readOnly = readonly;
@@ -439,7 +452,7 @@ export async function renderInspeccionVehiculos(container) {
     function resetForm() {
         currentId = null;
         form.reset();
-        inputFecha.value = new Date().toISOString().slice(0, 10);
+        inputFecha.value = '';
         evalState = {};
         ALL_KEYS.forEach(updateEvalButtons);
         mediasRows = [];
@@ -539,6 +552,7 @@ export async function renderInspeccionVehiculos(container) {
     function fillForm(record) {
         inputFecha.value      = record.fecha || '';
         inputConductor.value  = record.nombre_conductor || '';
+        inputCargo.value      = record.cargo || '';
         inputFechaProx.value  = record.fecha_proxima_inspeccion || '';
         inputTipo.value       = record.tipo_vehiculo || '';
         inputMarca.value      = record.marca || '';
@@ -565,6 +579,7 @@ export async function renderInspeccionVehiculos(container) {
         var payload = {
             fecha: fecha,
             nombre_conductor: inputConductor.value.trim() || null,
+            cargo: inputCargo.value.trim() || null,
             fecha_proxima_inspeccion: inputFechaProx.value || null,
             tipo_vehiculo: inputTipo.value.trim() || null,
             marca: inputMarca.value.trim() || null,

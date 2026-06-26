@@ -1,6 +1,7 @@
 import { showToast } from '../components/toast.js';
 import { showConfirmModal } from '../components/modal.js';
 import { hasPermission } from '../auth.js';
+import { initDatePicker } from '../components/datePicker.js';
 import {
     getAllInspeccionesHerramientas,
     createInspeccionHerramientas,
@@ -148,9 +149,11 @@ export async function renderInspeccionHerramientas(container) {
         + '<h3 class="form-section-title">1. Información General</h3>'
         + '<div class="form-grid">'
         + '<div class="form-group"><label class="form-label">Fecha de inspección *</label>'
-        + '<input type="date" class="form-input" id="her-fecha" required></div>'
+        + '<input type="text" class="form-input" id="her-fecha" readonly placeholder="Seleccione fecha..." style="cursor:pointer;"></div>'
         + '<div class="form-group"><label class="form-label">Lugar o proyecto</label>'
         + '<input type="text" class="form-input" id="her-lugar" placeholder="Lugar o proyecto"></div>'
+        + '<div class="form-group"><label class="form-label">Cargo</label>'
+        + '<input type="text" class="form-input" id="her-cargo" placeholder="Cargo"></div>'
         + '<div class="form-group" style="grid-column:1/-1;"><label class="form-label">Personas inspeccionadas</label>'
         + '<input type="text" class="form-input" id="her-personas" placeholder="Nombres de personas inspeccionadas"></div>'
         + '</div>'
@@ -225,12 +228,15 @@ export async function renderInspeccionHerramientas(container) {
     var form           = container.querySelector('#her-form');
     var inputFecha     = container.querySelector('#her-fecha');
     var inputLugar     = container.querySelector('#her-lugar');
+    var inputCargo     = container.querySelector('#her-cargo');
     var inputPersonas  = container.querySelector('#her-personas');
     var inputOtra      = container.querySelector('#her-otra-condicion');
     var searchInput    = container.querySelector('#table-search-input');
     var formActions    = container.querySelector('#form-actions');
 
     if (canEdit) btnNuevo.style.display = 'inline-flex';
+
+    initDatePicker(inputFecha, null, 'YYYY-MM-DD');
 
     // ── Eval table ─────────────────────────────────────────────────────────────
     function buildEvalTable() {
@@ -323,13 +329,19 @@ export async function renderInspeccionHerramientas(container) {
                     + '</td>'
                     + '<td style="' + tdStyle + '"><input type="text" class="mh-desc" value="' + _esc(row.descripcion) + '" placeholder="Descripción de la observación" style="' + _INPUT + '"' + ro + '></td>'
                     + '<td style="' + tdStyle + '"><input type="text" class="mh-control" value="' + _esc(row.medida) + '" placeholder="Medida de control propuesta" style="' + _INPUT + '"' + ro + '></td>'
-                    + '<td style="' + tdStyle + '"><input type="date" class="mh-fecha" value="' + (row.fecha || '') + '" style="' + _INPUT + '"' + ro + '></td>'
+                    + '<td style="' + tdStyle + '"><input type="text" class="mh-fecha" value="' + _esc(row.fecha) + '" placeholder="Seleccione fecha..." style="' + _INPUT + (readonly ? '' : ' cursor:pointer;') + '" readonly></td>'
                     + '<td style="' + tdStyle + '"><input type="text" class="mh-resp" value="' + _esc(row.responsable) + '" placeholder="Responsable" style="' + _INPUT + '"' + ro + '></td>'
                     + '<td style="' + tdStyle + ' text-align:center;">'
                     + (readonly ? '' : '<button type="button" class="btn-del-medida" data-idx="' + i + '" title="Eliminar" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:6px;width:28px;height:28px;cursor:pointer;color:#ef4444;font-size:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center;">×</button>')
                     + '</td>'
                     + '</tr>';
             }).join('');
+        }
+
+        if (!readonly) {
+            medidasTbody.querySelectorAll('.mh-fecha').forEach(function(el) {
+                initDatePicker(el, null, 'YYYY-MM-DD');
+            });
         }
 
         medidasTbody.querySelectorAll('.btn-del-medida').forEach(function(btn) {
@@ -361,7 +373,7 @@ export async function renderInspeccionHerramientas(container) {
         viewTable.style.display = 'none';
         viewForm.style.display = 'block';
 
-        [inputFecha, inputLugar, inputPersonas, inputOtra].forEach(function(el) {
+        [inputLugar, inputCargo, inputPersonas, inputOtra].forEach(function(el) {
             el.readOnly = readonly;
             el.style.opacity = readonly ? '0.75' : '';
         });
@@ -381,7 +393,7 @@ export async function renderInspeccionHerramientas(container) {
     function resetForm() {
         currentId = null;
         form.reset();
-        inputFecha.value = new Date().toISOString().slice(0, 10);
+        inputFecha.value = '';
         evalState = {};
         ALL_KEYS.forEach(updateEvalButtons);
         mediasRows = [];
@@ -479,6 +491,7 @@ export async function renderInspeccionHerramientas(container) {
     function fillForm(record) {
         inputFecha.value    = record.fecha || '';
         inputLugar.value    = record.lugar_proyecto || '';
+        inputCargo.value    = record.cargo || '';
         inputPersonas.value = record.personas_inspeccionadas || '';
         inputOtra.value     = record.descripcion_otra_condicion || '';
         setEvalState(record.evaluaciones || {});
@@ -499,6 +512,7 @@ export async function renderInspeccionHerramientas(container) {
         var payload = {
             fecha: fecha,
             lugar_proyecto: inputLugar.value.trim() || null,
+            cargo: inputCargo.value.trim() || null,
             personas_inspeccionadas: inputPersonas.value.trim() || null,
             evaluaciones: Object.assign({}, evalState),
             descripcion_otra_condicion: inputOtra.value.trim() || null,
