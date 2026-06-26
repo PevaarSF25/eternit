@@ -97,7 +97,7 @@ export async function renderInspeccionAO(container) {
             <i data-lucide="search" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-muted); width:16px; height:16px; pointer-events:none;"></i>
           </div>
           <button class="btn btn-primary btn-glow" id="btn-nuevo-registro" style="display:none; flex-shrink:0; white-space:nowrap; align-items:center; gap:6px; margin-left:auto;">
-            <i data-lucide="plus" style="width:16px;height:16px;"></i> Nueva Inspección A/O
+            <i data-lucide="plus" style="width:16px;height:16px;"></i> Nueva Inspección
           </button>
         </div>
       </div>
